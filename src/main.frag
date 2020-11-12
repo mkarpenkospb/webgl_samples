@@ -1,15 +1,31 @@
 in vec3 pos_world;
-
+in vec3 vert_color;
 uniform vec3 u_color;
 
-void main()
-{
-  vec3 vec_x = dFdx(pos_world);
-  vec3 vec_y = dFdy(pos_world);
+uniform vec2 c;
+uniform float r;
+uniform int iterations;
+uniform float width;
+uniform float height;
+uniform float scaleScreen;
+uniform vec2 screenCenter;
 
-  vec3 normal = normalize(cross(vec_x, vec_y));
+varying vec3 vColor;
 
-  float dot_val = 0.1 + 0.9 * clamp(dot(normal, vec3(0, 1, 0)), 0.0, 1.0);
+void main() {
+    vec2 f_coord = vec2((gl_FragCoord.x / (width / 1.0)) * (2.0 * r) - r, (gl_FragCoord.y / (height / 1.0)) * (2.0 * r) - r);
+    f_coord -= vec2(0.3, 0.3);
+    f_coord *= 2.0;
+    float tmp = 0.0;
+    int step = 0;
 
-  gl_FragColor = vec4(u_color * vec3(dot_val), 1);
+    for (; step < iterations; ++step) {
+        if (length(f_coord) > r ) {
+            break;
+        }
+        f_coord = vec2(f_coord.x * f_coord.x - f_coord.y * f_coord.y, 2.0 * f_coord.x * f_coord.y) + c;
+    }
+
+    gl_FragColor = vec4(1.0 - 10.0 * ( float(step) / float(iterations)),
+    1.0 - 100.0 * ( float(step) / float(iterations)),  1.0 - 10.0 * (float(step) / float(iterations)), 1.0);
 }
