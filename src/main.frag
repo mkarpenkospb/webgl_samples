@@ -1,3 +1,5 @@
+
+
 in vec3 pos_world;
 in vec3 vert_color;
 uniform vec3 u_color;
@@ -9,6 +11,7 @@ uniform float width;
 uniform float height;
 uniform float scaleScreen;
 uniform vec2 screenCenter;
+uniform sampler2D myColors;
 
 varying vec3 vColor;
 
@@ -26,6 +29,7 @@ void main() {
         f_coord = vec2(f_coord.x * f_coord.x - f_coord.y * f_coord.y, 2.0 * f_coord.x * f_coord.y) + c;
     }
 
-    gl_FragColor = vec4(1.0 - 10.0 * ( float(step) / float(iterations)),
-    1.0 - 100.0 * ( float(step) / float(iterations)),  1.0 - 10.0 * (float(step) / float(iterations)), 1.0);
+//    gl_FragColor = vec4(1.0 - 10.0 * ( float(step) / float(iterations)),
+//    1.0 - 100.0 * ( float(step) / float(iterations)),  1.0 - 10.0 * (float(step) / float(iterations)), 1.0);
+    gl_FragColor = vec4(texture(myColors, vec2(1.0, (float(step) / float(iterations)))).rgb, 1);
 }

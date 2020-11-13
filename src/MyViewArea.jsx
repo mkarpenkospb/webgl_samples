@@ -45,6 +45,15 @@ export class ViewArea extends Component {
         this.scaleScreen = 1.0
         this.scaleBase = 9.0 / 10.0;
 
+        let textureColors = [
+            [0x00, 0x00, 0x00, 0xFF],
+            [0x00, 0xbf, 0xff, 0xFF],
+            [0xcc, 0xdd, 0x00, 0xFF], //
+            [0xcc, 0xdd, 0x00, 0xFF], //
+            [0xcc, 0xdd, 0x00, 0xFF], //
+            [0xFF, 0xFF, 0xFF, 0xFF],
+        ]
+
         this.customMaterial = new THREE.ShaderMaterial({
             uniforms:
                 {
@@ -54,7 +63,8 @@ export class ViewArea extends Component {
                     r : {value: (1 + ((1 + 4 * this.c.length()) ** 0.5)) / 2},
                     width : {value: 0.0},
                     height : {value: 0.0},
-                    scaleScreen : {value: this.scaleScreen ** this.scaleBase}
+                    scaleScreen : {value: this.scaleScreen ** this.scaleBase},
+                    myColors : {type : "t", value: textureColors}
                 },
             side: THREE.DoubleSide,
             vertexShader: vxShader,
