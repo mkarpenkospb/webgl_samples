@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 
-import { ViewArea } from './ViewArea.jsx';
+import { ViewArea } from './PearArea.jsx';
 
 import './styles.css';
 

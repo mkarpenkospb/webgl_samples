@@ -37,6 +37,7 @@ export class ViewArea extends Component {
 
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera( 90, 1, 0.1, 1000 );
+    // this.camera = new THREE.PerspectiveCamera( 90, 1, 0.1, 1000 );
 
     this.camera.position.z = 15;
     this.camera.position.x = 15;
@@ -47,14 +48,14 @@ export class ViewArea extends Component {
     let loader = new THREE.OBJLoader();
 
     this.bunnyObject = loader.parse(bunny_model);
-    this.bunnyObject.traverse( (child) => {
+    this.pearObject.traverse( (child) => {
       if ( child instanceof THREE.Mesh ) {
           child.material = this.customMaterial;
       }
     });
     this.bunnyRotation = 0;
 
-    this.scene.add(this.bunnyObject);
+    this.scene.add(this.pearObject);
 
     this.options = {
       color: "#ffae23",
@@ -77,8 +78,7 @@ export class ViewArea extends Component {
     }
 
     this.addDatGUI();
-
-    var renderer = new THREE.WebGLRenderer( { canvas: canvas, context: gl } );
+    let renderer = new THREE.WebGLRenderer( { canvas: canvas, context: gl } );
     renderer.setSize(canvas.width, canvas.height );
 
     this.prevTime = new Date();
@@ -118,13 +118,13 @@ export class ViewArea extends Component {
 
       this.controls.update();
 
-      this.bunnyObject.position.set(3, 1, 1);
-      this.bunnyObject.scale.set(30, 30, 30);
-      this.bunnyRotation = this.bunnyRotation + (curTime.getTime() - this.prevTime.getTime()) / 1000 * this.options.rotationSpeed * Math.PI / 180;
-      this.bunnyObject.quaternion.setFromAxisAngle( new THREE.Vector3( 0, 1, 0 ), this.bunnyRotation);
+      this.pearObject.position.set(3, 1, 1);
+      this.pearObject.scale.set(30, 30, 30);
+      this.pearRotation = this.pearRotation + (curTime.getTime() - this.prevTime.getTime()) / 1000 * this.options.rotationSpeed * Math.PI / 180;
+      this.pearObject.quaternion.setFromAxisAngle( new THREE.Vector3( 0, 1, 0 ), this.pearRotation);
 
       this.customMaterial.uniforms.u_color.value = optionColorToVec3(this.options.color);
-
+      // this.customMaterial.uniforms
       renderer.render( this.scene, this.camera );
 
       this.prevTime = curTime;
