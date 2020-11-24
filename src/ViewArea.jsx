@@ -1,8 +1,8 @@
 import React, { Component } from "react";
 
 import * as THREE from 'three-full';
-import vxShader from './main.vert';
-import fragShader from './main.frag';
+import vxShader from '../shaders/terra.vert';
+import fragShader from '../shaders/terra.frag';
 
 import { createAxes } from './AxesObject.js';
 import * as dat from 'dat.gui'
@@ -49,7 +49,7 @@ export class ViewArea extends Component {
     this.bunnyObject = loader.parse(bunny_model);
     this.bunnyObject.traverse( (child) => {
       if ( child instanceof THREE.Mesh ) {
-          child.material = this.customMaterial;
+          child.material = this.terraMaterial;
       }
     });
     this.bunnyRotation = 0;
@@ -123,7 +123,7 @@ export class ViewArea extends Component {
       this.bunnyRotation = this.bunnyRotation + (curTime.getTime() - this.prevTime.getTime()) / 1000 * this.options.rotationSpeed * Math.PI / 180;
       this.bunnyObject.quaternion.setFromAxisAngle( new THREE.Vector3( 0, 1, 0 ), this.bunnyRotation);
 
-      this.customMaterial.uniforms.u_color.value = optionColorToVec3(this.options.color);
+      this.terraMaterial.uniforms.u_color.value = optionColorToVec3(this.options.color);
 
       renderer.render( this.scene, this.camera );
 

@@ -1,19 +1,15 @@
 import React, {Component} from "react";
 
 import * as THREE from 'three-full';
-import vxShader from './main.vert';
-import fragShader from './main.frag';
+import vxShader from '../shaders/terra.vert';
+import fragShader from '../shaders/terra.frag';
 
 import {createAxes} from './AxesObject.js';
+import {setUpTerra, setUpLighthouse} from './AreaSettings.js';
 import * as dat from 'dat.gui'
 import parse from 'color-parse';
 
-import bunny_model from './bunny.obj';
-import terra from './terra/terra6.png';
-import upper from './tiles/tile_grass.jpg';
-import lower from './tiles/tile_rock1.jpg';
-import middle from './tiles/tile_rock.png';
-
+import lighthouse_model from '../resources/lighthouse/Mayak_3.obj';
 
 function optionColorToVec3(color) {
     let parsedColor = parse(color);
@@ -27,48 +23,6 @@ export class ViewArea extends Component {
     constructor() {
         super();
 
-        let tex_loader = new THREE.TextureLoader();
-
-        let heightMap = tex_loader.load(terra);
-        heightMap.wrapS = THREE.RepeatWrapping;
-        heightMap.wrapT = THREE.RepeatWrapping;
-
-        let upper_tex = tex_loader.load(upper);
-        upper_tex.wrapS = THREE.RepeatWrapping;
-        upper_tex.wrapT = THREE.RepeatWrapping;
-
-        let lower_tex = tex_loader.load(lower);
-        lower_tex.wrapS = THREE.RepeatWrapping;
-        lower_tex.wrapT = THREE.RepeatWrapping;
-
-        let middle_tex = tex_loader.load(middle);
-        middle_tex.wrapS = THREE.RepeatWrapping;
-        middle_tex.wrapT = THREE.RepeatWrapping;
-
-
-
-        this.customMaterial = new THREE.ShaderMaterial({
-            uniforms:
-                {
-                    u_color: {value: new THREE.Vector3()},
-                    height_map: {value: heightMap},
-                    u_upper_tex: {value: upper_tex},
-                    u_lower_tex: {value: lower_tex},
-                    u_middle_tex: {value: middle_tex},
-                    scale: {value: 100},
-                },
-
-            vertexShader: vxShader,
-            fragmentShader: fragShader
-        });
-
-
-
-        let plane = new THREE.PlaneGeometry( 2000, 2000, 100, 100 );
-        let plane_mesh = new THREE.Mesh(plane, this.customMaterial);
-        plane_mesh.rotation.x = -Math.PI / 2;
-        plane_mesh.position.y = -100;
-
         this.canvasRef = React.createRef();
         this.divRef = React.createRef();
 
@@ -79,29 +33,32 @@ export class ViewArea extends Component {
         this.camera.position.x = 300;
         this.camera.position.y = 300;
 
+        setUpTerra(this);
+        setUpLighthouse(this);
 
-        // hightMap.wrapS
 
-        // this.scene.add(createAxes());
-
-        let loader = new THREE.OBJLoader();
-
-        // this.bunnyObject = loader.parse(bunny_model);
-        // this.bunnyObject.traverse( (child) => {
-        //   if ( child instanceof THREE.Mesh ) {
-        //       child.material = this.customMaterial;
-        //   }
-        // });
-        // this.bunnyRotation = 0;
-
-        // this.scene.add(this.bunnyObject);
-        this.scene.add( plane_mesh );
-
+        // this.scene.background = new THREE.CubeTextureLoader().setPath(
+        //     './src/cubemap/'
+        // ).load([
+        //
+        //     'stormydays_ft_1.png',
+        //     'stormydays_bk_1.png',
+        //     'stormydays_up_1.png',
+        //     'stormydays_dn_1.png',
+        //
+        //     'stormydays_rt_1.png',
+        //     'stormydays_lf_1.png',
+        //
+        // ]);
 
         this.options = {
             color: "#bd9c36",
             rotationSpeed: 60,
-            scale: 200
+            terraScale: 200,
+            lighthouseScale: 30,
+            lposx: 3,
+            lposy: 1,
+            lposz: 1
         };
     }
 
@@ -161,13 +118,21 @@ export class ViewArea extends Component {
 
             this.controls.update();
 
-            // this.bunnyObject.position.set(3, 1, 1);
-            // this.bunnyObject.scale.set(30, 30, 30);
+            this.lighthouseObject.position.set(
+                this.options.lposx,
+                this.options.lposy,
+                this.options.lposz);
+
+            this.lighthouseObject.scale.set(
+                this.options.lighthouseScale,
+                this.options.lighthouseScale,
+                this.options.lighthouseScale);
+
             // this.bunnyRotation = this.bunnyRotation + (curTime.getTime() - this.prevTime.getTime()) / 1000 * this.options.rotationSpeed * Math.PI / 180;
             // this.bunnyObject.quaternion.setFromAxisAngle( new THREE.Vector3( 0, 1, 0 ), this.bunnyRotation);
 
-            this.customMaterial.uniforms.u_color.value = optionColorToVec3(this.options.color);
-            this.customMaterial.uniforms.scale.value = this.options.scale;
+            this.terraMaterial.uniforms.u_color.value = optionColorToVec3(this.options.color);
+            this.terraMaterial.uniforms.scale.value = this.options.terraScale;
 
             renderer.render(this.scene, this.camera);
 
@@ -186,7 +151,12 @@ export class ViewArea extends Component {
         var fields = this.gui.addFolder("Field");
         fields.addColor(this.options, "color");
         fields.add(this.options, "rotationSpeed", 0, 360, 1);
-        fields.add(this.options, "scale", 0, 1000, 1);
+        fields.add(this.options, "terraScale", 0, 1000, 1);
+        fields.add(this.options, "lighthouseScale", 0, 200, 1);
+        fields.add(this.options, "lposx", -200, 200, 1);
+        fields.add(this.options, "lposy", -200, 200, 1);
+        fields.add(this.options, "lposz", -200, 200, 1);
+
         fields.open();
     }
 
