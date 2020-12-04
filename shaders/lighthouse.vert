@@ -1,8 +1,8 @@
-out vec3 pos_world;
-out vec3 out_normal;
+#include <clipping_planes_pars_vertex>
 
 void main() {
-    out_normal = normalize(normalMatrix * normal);
-    pos_world = (modelMatrix * vec4(position, 1.0)).xyz;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    #include <begin_vertex>
+
+    #include <project_vertex>
+    #include <clipping_planes_vertex>
 }

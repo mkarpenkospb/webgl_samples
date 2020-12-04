@@ -1,11 +1,14 @@
 import React, {Component} from "react";
 
-import * as THREE from 'three-full';
+import * as THREE from 'three';
+
+import OrbitControls from 'orbit-controls-es6';
+
 import vxShader from '../shaders/terra.vert';
 import fragShader from '../shaders/terra.frag';
 
 import {createAxes} from './AxesObject.js';
-import {setUpTerra, setUpLighthouse} from './AreaSettings.js';
+import {setUpTerra, setUpLighthouse, water_plane} from './AreaSettings.js';
 import * as dat from 'dat.gui'
 import parse from 'color-parse';
 
@@ -19,6 +22,11 @@ function optionColorToVec3(color) {
     return new THREE.Vector3(values[0] / 255, values[1] / 255, values[2] / 255);
 }
 
+
+let reflectivePlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -100);
+let refractivePlane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 100);
+let allView = new THREE.Plane(new THREE.Vector3(0, 1, 0), 1000);
+
 export class ViewArea extends Component {
     constructor() {
         super();
@@ -30,35 +38,27 @@ export class ViewArea extends Component {
         this.camera = new THREE.PerspectiveCamera(90, 1, 0.1, 5000);
 
         this.camera.position.z = 300;
-        this.camera.position.x = 300;
-        this.camera.position.y = 300;
+        this.camera.position.x = -100;
+        this.camera.position.y = 250;
 
         setUpTerra(this);
         setUpLighthouse(this);
+        water_plane(this);
 
-
-        // this.scene.background = new THREE.CubeTextureLoader().setPath(
-        //     './src/cubemap/'
-        // ).load([
-        //
-        //     'stormydays_ft_1.png',
-        //     'stormydays_bk_1.png',
-        //     'stormydays_up_1.png',
-        //     'stormydays_dn_1.png',
-        //
-        //     'stormydays_rt_1.png',
-        //     'stormydays_lf_1.png',
-        //
-        // ]);
 
         this.options = {
             color: "#bd9c36",
             rotationSpeed: 60,
-            terraScale: 200,
-            lighthouseScale: 30,
-            lposx: 3,
-            lposy: 1,
-            lposz: 1
+            terraScale: 227,
+            lighthouseScale: 63,
+            lposx: -83,
+            lposz: -83,
+            plane_x : 0,
+            plane_y : 0,
+            plane_z : 0,
+            constant: 1000,
+            n_water: 1.0,
+            n_air: 1.0
         };
     }
 
@@ -68,7 +68,7 @@ export class ViewArea extends Component {
             return;
         }
 
-        this.controls = new THREE.OrbitControls(this.camera, this.canvasRef.current);
+        this.controls = new OrbitControls(this.camera, canvas);
         this.controls.update();
 
         const gl = canvas.getContext('webgl2');
@@ -80,13 +80,26 @@ export class ViewArea extends Component {
 
         var renderer = new THREE.WebGLRenderer({canvas: canvas, context: gl});
         renderer.setSize(canvas.width, canvas.height);
+        // var globalPlane = new THREE.Plane( new THREE.Vector3( 1, 0, 0 ), 1 );
+        // renderer.clippingPlanes = [ globalPlane ];
+        renderer.localClippingEnabled = true;
         // renderer.setPixelRatio(window.devicePixelRatio);
         this.prevTime = new Date();
 
+        const cubeRenderTargetReflection = new THREE.WebGLCubeRenderTarget( 512, { format: THREE.RGBFormat, generateMipmaps: true, minFilter: THREE.LinearMipmapLinearFilter } );
+        const cubeCameraReflection = new THREE.CubeCamera( 0.1, 5000, cubeRenderTargetReflection );
+        this.scene.add( cubeCameraReflection );
+
+        const cubeRenderTargetRefraction = new THREE.WebGLCubeRenderTarget( 512, { format: THREE.RGBFormat, generateMipmaps: true, minFilter: THREE.LinearMipmapLinearFilter } );
+        const cubeCameraRefraction = new THREE.CubeCamera( 0.1, 5000, cubeRenderTargetRefraction );
+        this.scene.add( cubeCameraRefraction );
+
+
+
         const renderLoopTick = () => {
             // Handle resize
-            if (this.divRef.current.offsetWidth != canvas.width ||
-                this.divRef.current.offsetHeight != canvas.height) {
+            if (this.divRef.current.offsetWidth !== canvas.width ||
+                this.divRef.current.offsetHeight !== canvas.height) {
                 console.log(`Resizing canvas: ${this.divRef.current.offsetWidth}x${this.divRef.current.offsetHeight}`);
                 // console.log(this.heightMap.color);
                 canvas.width = this.divRef.current.offsetWidth;
@@ -106,8 +119,13 @@ export class ViewArea extends Component {
 
                 this.camera.position.set(d.x, d.y, d.z);
                 this.camera.quaternion.clone(q);
+                cubeCameraReflection.quaternion.clone(q);
+                cubeCameraRefraction.quaternion.clone(q);
+
                 this.camera.scale.set(s.x, s.y, s.z);
-                this.controls = new THREE.OrbitControls(this.camera, canvas);
+                cubeCameraReflection.scale.set(s.x, s.y, s.z);
+                cubeCameraRefraction.scale.set(s.x, s.y, s.z);
+                this.controls = new OrbitControls(this.camera, canvas);
             }
 
             const curTime = new Date();
@@ -116,46 +134,84 @@ export class ViewArea extends Component {
             gl.clearColor(0.2, 0.2, 0.2, 1.0);
             gl.clear(gl.COLOR_BUFFER_BIT);
 
+            // -------------------------- update gui controllers ---------------------------
             this.controls.update();
-
-            this.lighthouseObject.position.set(
-                this.options.lposx,
-                this.options.lposy,
-                this.options.lposz);
-
             this.lighthouseObject.scale.set(
                 this.options.lighthouseScale,
                 this.options.lighthouseScale,
                 this.options.lighthouseScale);
 
-            // this.bunnyRotation = this.bunnyRotation + (curTime.getTime() - this.prevTime.getTime()) / 1000 * this.options.rotationSpeed * Math.PI / 180;
-            // this.bunnyObject.quaternion.setFromAxisAngle( new THREE.Vector3( 0, 1, 0 ), this.bunnyRotation);
-
-            this.terraMaterial.uniforms.u_color.value = optionColorToVec3(this.options.color);
             this.terraMaterial.uniforms.scale.value = this.options.terraScale;
+            // reflectivePlane = new THREE.Plane(
+            //     new THREE.Vector3(this.options.plane_x, this.options.plane_y, this.options.plane_z),
+            //     this.options.constant);
+            this.water.visible = false;
+
+
+
+            for (let material of this.lighthouseMaterialMap.values()) {
+                material.uniforms.x_pos.value = this.options.lposx;
+                material.uniforms.z_pos.value = this.options.lposz;
+                material.uniforms.scale.value = this.options.terraScale;
+                material.clippingPlanes = [reflectivePlane];
+            }
+
+            this.terraMaterial.clippingPlanes  = [reflectivePlane];
+
+            cubeCameraReflection.position.copy(this.camera.position);
+            cubeCameraReflection.position.y -= (cubeCameraReflection.position.y - this.water_level) * 2;
+            cubeCameraReflection.update(renderer, this.scene);
+
+
+            this.waterMaterial.uniforms.u_scene_reflect.value = cubeRenderTargetReflection.texture;
+
+
+            for (let material of this.lighthouseMaterialMap.values()) {
+                material.clippingPlanes = [refractivePlane];
+            }
+
+            this.terraMaterial.clippingPlanes  = [refractivePlane];
+
+            cubeCameraRefraction.position.copy(this.camera.position);
+            // cubeCameraRefraction.position.y -= (cubeCameraReflection.position.y - this.water_level) * 2;
+            cubeCameraRefraction.update(renderer, this.scene);
+            this.waterMaterial.uniforms.u_scene_refract.value = cubeRenderTargetRefraction.texture;
+
+            this.water.visible = true;
+
+            this.waterMaterial.uniforms.n_water.value = this.options.n_water;
+            this.waterMaterial.uniforms.n_air.value = this.options.n_air;
+
+
+            for (let material of this.lighthouseMaterialMap.values()) {
+                material.clippingPlanes = [allView]
+            }
+
+            this.terraMaterial.clippingPlanes = [allView];
 
             renderer.render(this.scene, this.camera);
-
             this.prevTime = curTime;
 
             requestAnimationFrame(renderLoopTick);
         }
 
         requestAnimationFrame(renderLoopTick);
-
     }
 
     addDatGUI = () => {
         this.gui = new dat.GUI({name: "My GUI"});
 
         var fields = this.gui.addFolder("Field");
-        fields.addColor(this.options, "color");
-        fields.add(this.options, "rotationSpeed", 0, 360, 1);
         fields.add(this.options, "terraScale", 0, 1000, 1);
         fields.add(this.options, "lighthouseScale", 0, 200, 1);
-        fields.add(this.options, "lposx", -200, 200, 1);
-        fields.add(this.options, "lposy", -200, 200, 1);
-        fields.add(this.options, "lposz", -200, 200, 1);
+        fields.add(this.options, "lposx", -1000, 1000, 0.5);
+        fields.add(this.options, "lposz", -1000, 1000, 0.5);
+        fields.add(this.options, "plane_x", -1, 1, 0.1);
+        fields.add(this.options, "plane_y", -1, 1, 0.1);
+        fields.add(this.options, "plane_z", -1, 1, 0.1);
+        fields.add(this.options, "constant", -1000, 1000, 1);
+        fields.add(this.options, "n_water", 1.0, 10.0, 0.1);
+        fields.add(this.options, "n_air",  1.0, 10.0, 0.1);
 
         fields.open();
     }
