@@ -1,8 +1,9 @@
 import React, {Component} from "react";
 
 import * as THREE from 'three';
+import * as THREEFULL from 'three-full';
 
-import OrbitControls from 'orbit-controls-es6';
+// import OrbitControls from 'orbit-controls-es6';
 
 import {setUpTerra, setUpLighthouse, water_plane} from './AreaSettings.js';
 import * as dat from 'dat.gui'
@@ -57,7 +58,7 @@ export class ViewArea extends Component {
         if (!canvas) {
             return;
         }
-        this.controls = new OrbitControls(this.camera, canvas);
+        this.controls = new THREEFULL.OrbitControls(this.camera, canvas);
         this.controls.update();
 
         const gl = canvas.getContext('webgl2');
@@ -119,7 +120,7 @@ export class ViewArea extends Component {
                 this.camera.scale.set(s.x, s.y, s.z);
                 cubeCameraReflection.scale.set(s.x, s.y, s.z);
                 cubeCameraRefraction.scale.set(s.x, s.y, s.z);
-                this.controls = new OrbitControls(this.camera, canvas);
+                this.controls = new THREEFULL.OrbitControls(this.camera, canvas);
             }
 
             const curTime = new Date();
