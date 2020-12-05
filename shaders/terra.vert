@@ -7,6 +7,8 @@ uniform sampler2D height_map_bed;
 uniform float scale;
 varying vec2 vUV;
 
+varying float distToCamera;
+
 void main()
 {
   #include <begin_vertex>
@@ -22,5 +24,6 @@ void main()
   #include <project_vertex>
   mvPosition = modelViewMatrix  * vec4(new_pos, 1.0);
   gl_Position = projectionMatrix * mvPosition;
+  distToCamera = gl_Position.w;
   #include <clipping_planes_vertex>
 }

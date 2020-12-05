@@ -1,38 +1,37 @@
 import React, {Component} from "react";
 
-// import { OBJLoader } from 'Ob'
 import * as THREE from 'three';
 
+// ----------------------------- terra imports -------------------------------------------
+
+//shaders
 import vxShaderTerra from '../shaders/terra.vert';
 import fragShaderTerra from '../shaders/terra.frag';
-
-import vxShaderLighthouse from '../shaders/lighthouse.vert';
-import fragShaderLighthouse from '../shaders/lighthouse.frag';
-
-import {MyViewArea} from './MyViewArea.jsx';
-
-import {createAxes} from './AxesObject.js';
-import * as dat from 'dat.gui'
-import parse from 'color-parse';
-
-import bunny_model from './bunny.obj';
+//model
 import terra from '../resources/terra/terra6.png';
+
 import terra_bed from '../resources/terra/terra7cropped.jpg';
 import upper from '../resources/tiles/tile_snow.jpg';
 import lower from '../resources/tiles/tile_grass.jpg';
 import middle from '../resources/tiles/tile_rock.png';
+import details_stone from '../resources/tiles/details1.jpg';
+import details_snow from '../resources/tiles/details_snow_0.jpg';
+import details_grass from '../resources/tiles/tekstura-travy21_bw.jpg';
+
+
+// ----------------------------- loads for lighthouse ---------------------------
+
+import vxShaderBase from '../shaders/base.vert';
+import fragShaderBase from '../shaders/base.frag';
+
+//------------------------------------------------------------------------
 import lighthouse_model from "../resources/lighthouse/Mayak_3.obj";
-
-
-// ----------------------------- textures for lighthouse ---------------------------
 
 import base_color from '../resources/lighthouse/textures/Base_color_7.jpeg';
 import body_color from '../resources/lighthouse/textures/Body_color_4.jpeg';
 import door_color from '../resources/lighthouse/textures/Door_color_9.jpeg';
 import top_color from '../resources/lighthouse/textures/Top_color_1.jpeg';
 
-import vxShaderBase from '../shaders/base.vert';
-import fragShaderBase from '../shaders/base.frag';
 
 // -------------------------------------------- water shaders --------------------
 
@@ -44,56 +43,56 @@ import water_normals from '../resources/water/6185-normal.jpg'
 let allView = new THREE.Plane(new THREE.Vector3(0, -1, 0), 0);
 // let allView = new THREE.Plane(new THREE.Vector3(0, 1, 0), -10000);
 
-class GridInfo {
-    constructor(indices, position, normal, uv) {
-        this.indices = indices;
-        this.position = position;
-        this.normal = normal;
-        this.uv = uv;
-    }
-}
+function create_tb(material) {
+    // https://habr.com/ru/post/415579/
+    let pos1  = new THREE.Vector3(-1.0,  1.0, 100.0);
+    let pos2  = new THREE.Vector3(-1.0, -1.0, 100.0);
+    let pos3  = new THREE.Vector3( 1.0, -1.0, 100.0);
+    let pos4  = new THREE.Vector3( 1.0,  1.0, 100.0);
 
-function create_grid(size,  frequency) {
-    let edge_size = frequency / size;
-    let vertices = [];
-    for (let i = 0; i < frequency; i++) {
-        for (let j = 0; j < frequency; ++j) {
+    let uv1  = new THREE.Vector2(0.0, 1.0);
+    let uv2  = new THREE.Vector2(0.0, 0.0);
+    let uv3  = new THREE.Vector2(1.0, 0.0);
+    let uv4  = new THREE.Vector2(1.0, 1.0);
 
-        }
-    }
+    let nm = new THREE.Vector3(0.0, 0.0, 1.0);
 
+    let edge1 = pos2.sub(pos1);
+    let edge2 = pos3.sub(pos1);
+    let deltaUV1 = uv2.sub(uv1);
+    let deltaUV2 = uv3.sub(uv1);
+
+    let f = 1.0 / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
+
+    let tangent = new THREE.Vector3(0.0, 0.0, 0.0);
+    let bitangent = new THREE.Vector3(0.0, 0.0, 0.0);
+
+
+    tangent.x = f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x);
+    tangent.y = f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y);
+    tangent.z = f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
+    // tangent.normalize();
+
+    bitangent.x = f * (-deltaUV2.x * edge1.x + deltaUV1.x * edge2.x);
+    bitangent.y = f * (-deltaUV2.x * edge1.y + deltaUV1.x * edge2.y);
+    bitangent.z = f * (-deltaUV2.x * edge1.z + deltaUV1.x * edge2.z);
+    // bitangent.normalize();
+
+    material.uniforms.tangent.value = tangent.normalize();
+    material.uniforms.bitangent.value =  bitangent.normalize();
 }
 
 
 
 export function water_plane(area) {
-    let tex_loader = new THREE.TextureLoader();
-    let waterNormalMap = tex_loader.load(water_normals);
-    waterNormalMap.wrapS = THREE.RepeatWrapping;
-    waterNormalMap.wrapT = THREE.RepeatWrapping;
-
-
-    area.water_level = 100.0;
-
-    area.waterMaterial = new THREE.ShaderMaterial({
-        uniforms : {
-            u_scene_reflect : {value: null},
-            u_scene_refract : {value: null},
-            n_water: {value: 1.0},
-            n_air: {value: 1.0},
-            normal_map: {value: waterNormalMap}
-        },
-        vertexShader: vxShaderPlane,
-        fragmentShader: fragShaderPlane,
-        clippingPlanes: [allView]
-    });
+    // area.water_level = 100.0;
 
     const vScale = 1000.0;
     let vertices = [
-        -vScale,  area.water_level, -vScale,
-        -vScale, area.water_level, vScale,
-        vScale,  area.water_level, vScale,
-        vScale,  area.water_level, -vScale
+        -vScale,  0.0, -vScale,
+        -vScale, 0.0, vScale,
+        vScale,  0.0, vScale,
+        vScale,  0.0, -vScale
     ];
 
     let normal = Array(4).fill([0,1,0]).flat();
@@ -112,8 +111,33 @@ export function water_plane(area) {
     geometry.setAttribute("normal", new THREE.Int8BufferAttribute(normal, 3));
     geometry.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
 
-    area.water = new THREE.Mesh(geometry, area.waterMaterial);
 
+    let tex_loader = new THREE.TextureLoader();
+    let waterNormalMap = tex_loader.load(water_normals);
+    waterNormalMap.wrapS = THREE.RepeatWrapping;
+    waterNormalMap.wrapT = THREE.RepeatWrapping;
+
+    area.waterMaterial = new THREE.ShaderMaterial({
+        uniforms : {
+            water_level: {value: 100.0},
+            u_scene_reflect : {value: null},
+            u_scene_refract : {value: null},
+            n_water: {value: 1.0},
+            n_air: {value: 1.0},
+            normal_map_fst: {value: waterNormalMap},
+            ripple: {value: 60.0},
+            time: {value: 0.0},
+            tangent: {value:  new THREE.Vector3(0.0, 0.0, 0.0)},
+            bitangent: {value:  new THREE.Vector3(0.0, 0.0, 0.0)},
+        },
+        vertexShader: vxShaderPlane,
+        fragmentShader: fragShaderPlane,
+        clippingPlanes: [allView]
+    });
+
+    create_tb(area.waterMaterial);
+
+    area.water = new THREE.Mesh(geometry, area.waterMaterial);
     area.scene.add(area.water);
 }
 
@@ -144,6 +168,18 @@ export function setUpTerra(area) {
     middle_tex.wrapS = THREE.RepeatWrapping;
     middle_tex.wrapT = THREE.RepeatWrapping;
 
+    let details_tex = tex_loader.load(details_stone);
+    details_tex.wrapS = THREE.RepeatWrapping;
+    details_tex.wrapT = THREE.RepeatWrapping;
+
+    let details_snow_tex = tex_loader.load(details_snow);
+    details_snow_tex.wrapS = THREE.RepeatWrapping;
+    details_snow_tex.wrapT = THREE.RepeatWrapping;
+
+    let details_grass_tex = tex_loader.load(details_grass);
+    details_grass_tex.wrapS = THREE.RepeatWrapping;
+    details_grass_tex.wrapT = THREE.RepeatWrapping;
+
     area.terraMaterial = new THREE.ShaderMaterial({
         uniforms:
             {
@@ -153,7 +189,17 @@ export function setUpTerra(area) {
                 u_upper_tex: {value: upper_tex},
                 u_lower_tex: {value: lower_tex},
                 u_middle_tex: {value: middle_tex},
+                details_tex: {value: details_tex},
+                details_tex_snow: {value: details_snow_tex},
+                details_tex_grass: {value: details_grass_tex},
                 scale: {value: 200},
+                threshold: {value: 6.0},
+                stone_details_intensive : {value: 0.5},
+                snow_details_intensive : {value: 0.5},
+                grass_details_intensive : {value: 0.5},
+                stone_details_freq: {value: 50.0},
+                snow_details_freq: {value: 50.0},
+                grass_details_freq: {value: 50.0},
             },
 
         vertexShader: vxShaderTerra,
@@ -172,7 +218,10 @@ export function setUpTerra(area) {
 
 export function setUpLighthouse(area) {
 
-    //https://stackoverflow.com/a/58321354
+    //https://stackoverflow.com/a/58321354 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! THREE.sRGBEncoding;
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! flipY = false;
+
     let tex_loader = new THREE.TextureLoader();
 
     let heightMap = tex_loader.load(terra);
@@ -208,6 +257,7 @@ export function setUpLighthouse(area) {
 
     // find min point to properly set all the positions on shader
     let min_pos =  new THREE.Vector3(Infinity, Infinity, Infinity);
+
     area.lighthouseObject.traverse((child) => {
         if (child instanceof THREE.Mesh) {
             let positions = child.geometry.attributes.position.array;
@@ -242,21 +292,6 @@ export function setUpLighthouse(area) {
         )
     };
 
-    area.lighthouseMaterial = new THREE.ShaderMaterial({
-        uniforms: {
-            min_point: {value: min_pos},
-            height_map: {value: heightMap},
-            x_pos: {value: 0},
-            z_pos: {value: 0},
-            u_color: {value: new THREE.Vector3(.3, .4, .2)},
-            scale: {value: 200.0},
-
-        },
-        clipping: true,
-        clippingPlanes: [allView],
-        vertexShader: vxShaderLighthouse,
-        fragmentShader: fragShaderLighthouse
-    })
 
     area.lighthouseMaterialMap = new Map();
     area.lighthouseObject.traverse((child) => {
@@ -283,8 +318,7 @@ export function setUpLighthouse(area) {
                     child.material =  basementMaterial;
                     break;
                 default:
-                    area.lighthouseMaterialMap.set('lighthouseMaterial', area.lighthouseMaterial);
-                    child.material = area.lighthouseMaterial;
+                    child.visible = false
             }
         }
     });

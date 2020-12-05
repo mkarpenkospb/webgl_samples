@@ -4,23 +4,8 @@ import * as THREE from 'three';
 
 import OrbitControls from 'orbit-controls-es6';
 
-import vxShader from '../shaders/terra.vert';
-import fragShader from '../shaders/terra.frag';
-
-import {createAxes} from './AxesObject.js';
 import {setUpTerra, setUpLighthouse, water_plane} from './AreaSettings.js';
 import * as dat from 'dat.gui'
-import parse from 'color-parse';
-
-import lighthouse_model from '../resources/lighthouse/Mayak_3.obj';
-
-function optionColorToVec3(color) {
-    let parsedColor = parse(color);
-
-    let values = parsedColor.values;
-
-    return new THREE.Vector3(values[0] / 255, values[1] / 255, values[2] / 255);
-}
 
 
 let reflectivePlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -100);
@@ -45,7 +30,6 @@ export class ViewArea extends Component {
         setUpLighthouse(this);
         water_plane(this);
 
-
         this.options = {
             color: "#bd9c36",
             rotationSpeed: 60,
@@ -53,12 +37,18 @@ export class ViewArea extends Component {
             lighthouseScale: 63,
             lposx: -83,
             lposz: -83,
-            plane_x : 0,
-            plane_y : 0,
-            plane_z : 0,
             constant: 1000,
-            n_water: 1.0,
-            n_air: 1.0
+            water_level: 100,
+            // n_water: 1.0,
+            // n_air: 1.0,
+            water_ripple: 46.0,
+            details_threshold: 57,
+            snow_details_intensive: 1.30,
+            stone_details_intensive: 1.6,
+            grass_details_intensive: 3.2,
+            snow_details_freq: 50.0,
+            stone_details_freq: 50.0,
+            grass_details_freq: 50.0,
         };
     }
 
@@ -67,7 +57,6 @@ export class ViewArea extends Component {
         if (!canvas) {
             return;
         }
-
         this.controls = new OrbitControls(this.camera, canvas);
         this.controls.update();
 
@@ -78,22 +67,27 @@ export class ViewArea extends Component {
 
         this.addDatGUI();
 
-        var renderer = new THREE.WebGLRenderer({canvas: canvas, context: gl});
+        let renderer = new THREE.WebGLRenderer({canvas: canvas, context: gl});
         renderer.setSize(canvas.width, canvas.height);
-        // var globalPlane = new THREE.Plane( new THREE.Vector3( 1, 0, 0 ), 1 );
-        // renderer.clippingPlanes = [ globalPlane ];
         renderer.localClippingEnabled = true;
         // renderer.setPixelRatio(window.devicePixelRatio);
         this.prevTime = new Date();
 
-        const cubeRenderTargetReflection = new THREE.WebGLCubeRenderTarget( 128, { format: THREE.RGBFormat, generateMipmaps: true, minFilter: THREE.LinearMipmapLinearFilter } );
-        const cubeCameraReflection = new THREE.CubeCamera( 0.1, 5000, cubeRenderTargetReflection );
-        this.scene.add( cubeCameraReflection );
+        const cubeRenderTargetReflection = new THREE.WebGLCubeRenderTarget(128, {
+            format: THREE.RGBFormat,
+            generateMipmaps: true,
+            minFilter: THREE.LinearMipmapLinearFilter
+        });
+        const cubeCameraReflection = new THREE.CubeCamera(0.1, 5000, cubeRenderTargetReflection);
+        this.scene.add(cubeCameraReflection);
 
-        const cubeRenderTargetRefraction = new THREE.WebGLCubeRenderTarget( 128, { format: THREE.RGBFormat, generateMipmaps: true, minFilter: THREE.LinearMipmapLinearFilter } );
-        const cubeCameraRefraction = new THREE.CubeCamera( 0.1, 5000, cubeRenderTargetRefraction );
-        this.scene.add( cubeCameraRefraction );
-
+        const cubeRenderTargetRefraction = new THREE.WebGLCubeRenderTarget(128, {
+            format: THREE.RGBFormat,
+            generateMipmaps: true,
+            minFilter: THREE.LinearMipmapLinearFilter
+        });
+        const cubeCameraRefraction = new THREE.CubeCamera(0.1, 5000, cubeRenderTargetRefraction);
+        this.scene.add(cubeCameraRefraction);
 
 
         const renderLoopTick = () => {
@@ -131,23 +125,40 @@ export class ViewArea extends Component {
             const curTime = new Date();
 
             gl.viewport(0, 0, canvas.width, canvas.height);
-            gl.clearColor(0.2, 0.2, 0.2, 1.0);
+            gl.clearColor(0.3, 0.4, 0.5, 1.0);
             gl.clear(gl.COLOR_BUFFER_BIT);
 
             // -------------------------- update gui controllers ---------------------------
             this.controls.update();
+
             this.lighthouseObject.scale.set(
                 this.options.lighthouseScale,
                 this.options.lighthouseScale,
                 this.options.lighthouseScale);
 
             this.terraMaterial.uniforms.scale.value = this.options.terraScale;
-            // reflectivePlane = new THREE.Plane(
-            //     new THREE.Vector3(this.options.plane_x, this.options.plane_y, this.options.plane_z),
-            //     this.options.constant);
+            this.terraMaterial.uniforms.threshold.value = this.options.details_threshold;
+            this.terraMaterial.uniforms.snow_details_intensive.value = this.options.snow_details_intensive;
+            this.terraMaterial.uniforms.stone_details_intensive.value = this.options.stone_details_intensive;
+            this.terraMaterial.uniforms.grass_details_intensive.value = this.options.grass_details_intensive;
+            this.terraMaterial.uniforms.snow_details_freq.value = this.options.snow_details_freq;
+            this.terraMaterial.uniforms.stone_details_freq.value = this.options.stone_details_freq;
+            this.terraMaterial.uniforms.grass_details_freq.value = this.options.grass_details_freq;
+
+            this.waterMaterial.uniforms.ripple.value = this.options.water_ripple;
+            this.waterMaterial.uniforms.time.value += (curTime.getTime() - this.prevTime.getTime()) / 10000;
+            this.waterMaterial.uniforms.water_level.value = this.options.water_level;
+
+            // useless variables, everything except n_water = 1 and n_air = 1 looks bad
+            // this.waterMaterial.uniforms.n_water.value = this.options.n_water;
+            // this.waterMaterial.uniforms.n_air.value = this.options.n_air;
+
+            // ----------------------- draw reflection, clip everything under the water -----------------------
+
+            reflectivePlane.constant = -this.options.water_level;
+            refractivePlane.constant = this.options.water_level;
+
             this.water.visible = false;
-
-
 
             for (let material of this.lighthouseMaterialMap.values()) {
                 material.uniforms.x_pos.value = this.options.lposx;
@@ -156,32 +167,30 @@ export class ViewArea extends Component {
                 material.clippingPlanes = [reflectivePlane];
             }
 
-            this.terraMaterial.clippingPlanes  = [reflectivePlane];
+            this.terraMaterial.clippingPlanes = [reflectivePlane];
 
             cubeCameraReflection.position.copy(this.camera.position);
-            cubeCameraReflection.position.y -= (cubeCameraReflection.position.y - this.water_level) * 2;
+            // place camera under the water
+            cubeCameraReflection.position.y -= (cubeCameraReflection.position.y - this.options.water_level) * 2;
             cubeCameraReflection.update(renderer, this.scene);
-
 
             this.waterMaterial.uniforms.u_scene_reflect.value = cubeRenderTargetReflection.texture;
 
+            // ----------------------- draw refraction, clip everything above the water -----------------------
 
             for (let material of this.lighthouseMaterialMap.values()) {
                 material.clippingPlanes = [refractivePlane];
             }
 
-            this.terraMaterial.clippingPlanes  = [refractivePlane];
+            this.terraMaterial.clippingPlanes = [refractivePlane];
 
             cubeCameraRefraction.position.copy(this.camera.position);
-            // cubeCameraRefraction.position.y -= (cubeCameraReflection.position.y - this.water_level) * 2;
             cubeCameraRefraction.update(renderer, this.scene);
             this.waterMaterial.uniforms.u_scene_refract.value = cubeRenderTargetRefraction.texture;
 
+            // ----------------------- finally draw the scene -------------------------------------------------
+
             this.water.visible = true;
-
-            this.waterMaterial.uniforms.n_water.value = this.options.n_water;
-            this.waterMaterial.uniforms.n_air.value = this.options.n_air;
-
 
             for (let material of this.lighthouseMaterialMap.values()) {
                 material.clippingPlanes = [allView]
@@ -191,7 +200,6 @@ export class ViewArea extends Component {
 
             renderer.render(this.scene, this.camera);
             this.prevTime = curTime;
-
             requestAnimationFrame(renderLoopTick);
         }
 
@@ -203,15 +211,20 @@ export class ViewArea extends Component {
 
         var fields = this.gui.addFolder("Field");
         fields.add(this.options, "terraScale", 0, 1000, 1);
+        fields.add(this.options, "water_level", 0, 200, 0.5);
         fields.add(this.options, "lighthouseScale", 0, 200, 1);
         fields.add(this.options, "lposx", -1000, 1000, 0.5);
         fields.add(this.options, "lposz", -1000, 1000, 0.5);
-        fields.add(this.options, "plane_x", -1, 1, 0.1);
-        fields.add(this.options, "plane_y", -1, 1, 0.1);
-        fields.add(this.options, "plane_z", -1, 1, 0.1);
-        fields.add(this.options, "constant", -1000, 1000, 1);
-        fields.add(this.options, "n_water", 1.0, 10.0, 0.1);
-        fields.add(this.options, "n_air",  1.0, 10.0, 0.1);
+        // fields.add(this.options, "n_water", 1.0, 10.0, 0.1);
+        // fields.add(this.options, "n_air",  1.0, 10.0, 0.1);
+        fields.add(this.options, "water_ripple", 1.0, 500.0, 1);
+        fields.add(this.options, "details_threshold", 0.0, 100.0, 1.0);
+        fields.add(this.options, "snow_details_intensive", 0.0, 4.0, 0.05);
+        fields.add(this.options, "stone_details_intensive", 0.0, 4.0, 0.05);
+        fields.add(this.options, "grass_details_intensive", 0.0, 4.0, 0.05);
+        fields.add(this.options, "snow_details_freq", 1.0, 1000.0, 1.0);
+        fields.add(this.options, "stone_details_freq", 1.0, 1000.0, 1.0);
+        fields.add(this.options, "grass_details_freq", 1.0, 1000.0, 1.0);
 
         fields.open();
     }
