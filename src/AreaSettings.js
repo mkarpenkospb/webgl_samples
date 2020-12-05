@@ -39,6 +39,7 @@ import fragShaderBase from '../shaders/base.frag';
 import vxShaderPlane from '../shaders/water_plane.vert';
 import fragShaderPlane from '../shaders/water_plane.frag';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
+import water_normals from '../resources/water/6185-normal.jpg'
 
 let allView = new THREE.Plane(new THREE.Vector3(0, -1, 0), 0);
 // let allView = new THREE.Plane(new THREE.Vector3(0, 1, 0), -10000);
@@ -67,6 +68,10 @@ function create_grid(size,  frequency) {
 
 export function water_plane(area) {
     let tex_loader = new THREE.TextureLoader();
+    let waterNormalMap = tex_loader.load(water_normals);
+    waterNormalMap.wrapS = THREE.RepeatWrapping;
+    waterNormalMap.wrapT = THREE.RepeatWrapping;
+
 
     area.water_level = 100.0;
 
@@ -76,6 +81,7 @@ export function water_plane(area) {
             u_scene_refract : {value: null},
             n_water: {value: 1.0},
             n_air: {value: 1.0},
+            normal_map: {value: waterNormalMap}
         },
         vertexShader: vxShaderPlane,
         fragmentShader: fragShaderPlane,

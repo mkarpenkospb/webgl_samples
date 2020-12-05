@@ -86,11 +86,11 @@ export class ViewArea extends Component {
         // renderer.setPixelRatio(window.devicePixelRatio);
         this.prevTime = new Date();
 
-        const cubeRenderTargetReflection = new THREE.WebGLCubeRenderTarget( 512, { format: THREE.RGBFormat, generateMipmaps: true, minFilter: THREE.LinearMipmapLinearFilter } );
+        const cubeRenderTargetReflection = new THREE.WebGLCubeRenderTarget( 128, { format: THREE.RGBFormat, generateMipmaps: true, minFilter: THREE.LinearMipmapLinearFilter } );
         const cubeCameraReflection = new THREE.CubeCamera( 0.1, 5000, cubeRenderTargetReflection );
         this.scene.add( cubeCameraReflection );
 
-        const cubeRenderTargetRefraction = new THREE.WebGLCubeRenderTarget( 512, { format: THREE.RGBFormat, generateMipmaps: true, minFilter: THREE.LinearMipmapLinearFilter } );
+        const cubeRenderTargetRefraction = new THREE.WebGLCubeRenderTarget( 128, { format: THREE.RGBFormat, generateMipmaps: true, minFilter: THREE.LinearMipmapLinearFilter } );
         const cubeCameraRefraction = new THREE.CubeCamera( 0.1, 5000, cubeRenderTargetRefraction );
         this.scene.add( cubeCameraRefraction );
 
