@@ -7,6 +7,11 @@ uniform vec3 tangent;
 uniform vec3 bitangent;
 uniform float water_level;
 
+
+
+
+
+
 void main()
 {
   out_normal = normal;
@@ -14,8 +19,9 @@ void main()
   vUV = uv;
   gl_Position = projectionMatrix * viewMatrix * vec4(pos_world, 1.0);
 
-  vec3 T = normalize(vec3(modelMatrix * vec4(tangent, 0.0)));
-  vec3 B = normalize(vec3(modelMatrix * vec4(bitangent, 0.0)));
-  vec3 N = normalize(vec3(modelMatrix * vec4(vec3(0.0, 0.1, 0.0), 0.0)));
+  // методом тыка и обновляения картинки подбираем тангент и битангент
+  vec3 T = normalize(vec3(modelMatrix * vec4(vec3(1.0, 0.0, 0.0), 0.0)));
+  vec3 B = normalize(vec3(modelMatrix * vec4(vec3(-1.0, 0.0, 0.0), 0.0)));
+  vec3 N = normalize(vec3(modelMatrix * vec4(vec3(0.0, 1.0, 0.0), 0.0)));
   TBN = mat3(T, B, N);
 }

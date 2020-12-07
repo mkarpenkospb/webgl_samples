@@ -45,41 +45,30 @@ let allView = new THREE.Plane(new THREE.Vector3(0, -1, 0), 0);
 
 function create_tb(material) {
     // https://habr.com/ru/post/415579/
-    let pos1  = new THREE.Vector3(-1.0,  1.0, 100.0);
-    let pos2  = new THREE.Vector3(-1.0, -1.0, 100.0);
-    let pos3  = new THREE.Vector3( 1.0, -1.0, 100.0);
-    let pos4  = new THREE.Vector3( 1.0,  1.0, 100.0);
+    let pos0  = new THREE.Vector3(-1.0,  0.0, -1.0);
+    let pos1  = new THREE.Vector3(-1.0, 0.0, 1.0);
+    let pos2  = new THREE.Vector3( 1.0, 0.0, 1.0);
 
+    let uv0  = new THREE.Vector2(0.0, 0.0);
     let uv1  = new THREE.Vector2(0.0, 1.0);
-    let uv2  = new THREE.Vector2(0.0, 0.0);
-    let uv3  = new THREE.Vector2(1.0, 0.0);
-    let uv4  = new THREE.Vector2(1.0, 1.0);
+    let uv2  = new THREE.Vector2(1.0, 1.0);
 
-    let nm = new THREE.Vector3(0.0, 0.0, 1.0);
+    let deltaPos1 = pos1.sub(pos0);
+    let deltaPos2 = pos2.sub(pos0);
+    let deltaUV1 = uv1.sub(uv0);
+    let deltaUV2 = uv2.sub(uv0);
 
-    let edge1 = pos2.sub(pos1);
-    let edge2 = pos3.sub(pos1);
-    let deltaUV1 = uv2.sub(uv1);
-    let deltaUV2 = uv3.sub(uv1);
+    let r = 1.0 / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
 
-    let f = 1.0 / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
-
-    let tangent = new THREE.Vector3(0.0, 0.0, 0.0);
-    let bitangent = new THREE.Vector3(0.0, 0.0, 0.0);
+    let tangent = ((deltaPos1.multiplyScalar(deltaUV2.y)).sub(deltaPos2.multiplyScalar(deltaUV1.y))).multiplyScalar(r);
+    let bitangent = ((deltaPos2.multiplyScalar(deltaUV1.x)).sub(deltaPos1.multiplyScalar(deltaUV2.x))).multiplyScalar(r);
 
 
-    tangent.x = f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x);
-    tangent.y = f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y);
-    tangent.z = f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
-    // tangent.normalize();
+    material.tangent = tangent;
+    material.bitangent = bitangent;
 
-    bitangent.x = f * (-deltaUV2.x * edge1.x + deltaUV1.x * edge2.x);
-    bitangent.y = f * (-deltaUV2.x * edge1.y + deltaUV1.x * edge2.y);
-    bitangent.z = f * (-deltaUV2.x * edge1.z + deltaUV1.x * edge2.z);
-    // bitangent.normalize();
-
-    material.uniforms.tangent.value = tangent.normalize();
-    material.uniforms.bitangent.value =  bitangent.normalize();
+    material.uniforms.tangent.value = tangent;
+    material.uniforms.bitangent.value =  bitangent;
 }
 
 
