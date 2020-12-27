@@ -45,7 +45,6 @@ export class ViewArea extends Component {
         // this.orthoCamera.position.x = 100;
         // this.orthoCamera.position.y = 250;
 
-
         setUpTerra(this);
         setUpLighthouse(this);
         // water_plane(this);
@@ -133,9 +132,6 @@ export class ViewArea extends Component {
             depthTexture : this.depthTexture,
         })
         this.shadowDepthTarget.depthBuffer = true;
-        // this.shadowDepthTarget.texture.format = THREE.DepthFormat;
-
-
 
         // dowDepthTarget.depthBuffer = true;
         // this.shadowDepthTarget.depthTexture = new THREE.DepthTexture()
@@ -201,7 +197,7 @@ export class ViewArea extends Component {
             renderer.setRenderTarget(null);
 
             for (let material of this.lighthouseMaterialMap.values()) {
-                material.uniforms.shadowsTexture.value = this.texture;
+                material.uniforms.shadowsTexture.value = this.depthTexture;
                 material.uniforms.shadowProjView.value = this.orthoMatrix;
             }
 

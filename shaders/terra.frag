@@ -55,7 +55,7 @@ void main()
 
   if (shadowRender == 0 && shadowTexPos.x >= 0.0 && shadowTexPos.x <= 1.0 && shadowTexPos.y >= 0.0 && shadowTexPos.y <= 1.0) {
 //    shadowCoeff = shadowIntensity;
-    float res = texture2D(shadowsTexture, shadowTexPos.xy).r;
+    float res = texture2D(shadowsTexture, shadowTexPos.xy).x;
     if (res < (shadowTexPos.z - 0.001)) {
       gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
     }
