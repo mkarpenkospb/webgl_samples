@@ -2,9 +2,10 @@
 //#include <clipping_planes_vertex>
 #include <clipping_planes_pars_fragment>
 
-
+in vec3 shadowTexPos;
 in vec3 pos_world;
 uniform vec3 u_color;
+uniform float shadowIntensity;
 
 uniform sampler2D u_upper_tex;
 uniform sampler2D u_lower_tex;
@@ -12,6 +13,9 @@ uniform sampler2D u_middle_tex;
 uniform sampler2D details_tex;
 uniform sampler2D details_tex_snow;
 uniform sampler2D details_tex_grass;
+
+uniform sampler2D shadowsTexture;
+
 
 uniform float threshold;
 uniform float snow_details_intensive;
@@ -21,11 +25,12 @@ uniform float snow_details_freq;
 uniform float stone_details_freq;
 uniform float grass_details_freq;
 
+
 varying float brightness;
 varying vec2 vUV;
 
 varying float distToCamera;
-
+uniform int shadowRender;
 void main()
 {
   #include <clipping_planes_fragment>
@@ -44,6 +49,20 @@ void main()
   vec4 middle = (smoothstep(0.30, 0.50, brightness) - smoothstep(0.40, 0.70, brightness)) * texture2D( u_middle_tex, vUV * 20.0 ) * stone_details;
   vec4 upper = (smoothstep(0.50, 0.65, brightness)) * texture2D( u_upper_tex, vUV * 10.0 ) * snow_details;
 
+  float shadowCoeff = 1.0;
 
-  gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0) + lower  + middle + upper;
+  gl_FragColor = (vec4(0.0, 0.0, 0.0, 1.0) + lower  + middle + upper);
+
+  if (shadowRender == 0 && shadowTexPos.x >= 0.0 && shadowTexPos.x <= 1.0 && shadowTexPos.y >= 0.0 && shadowTexPos.y <= 1.0) {
+//    shadowCoeff = shadowIntensity;
+    float res = texture2D(shadowsTexture, shadowTexPos.xy).r;
+    if (res < (shadowTexPos.z - 0.001)) {
+      gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+    }
+//    else if (res - shadowTexPos.z < 0.0001 || res - shadowTexPos.z > 0.0001) {
+//      gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0);
+//    }
+  }
+
+
 }

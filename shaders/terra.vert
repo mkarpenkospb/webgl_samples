@@ -1,5 +1,6 @@
 #include <clipping_planes_pars_vertex>
 
+out vec3 shadowTexPos;
 out vec3 pos_world;
 varying float brightness;
 uniform sampler2D height_map;
@@ -8,7 +9,9 @@ uniform float scale;
 varying vec2 vUV;
 
 varying float distToCamera;
+uniform mat4 shadowProjView;
 
+uniform int shadowRender;
 void main()
 {
   #include <begin_vertex>
@@ -25,5 +28,11 @@ void main()
   mvPosition = modelViewMatrix  * vec4(new_pos, 1.0);
   gl_Position = projectionMatrix * mvPosition;
   distToCamera = gl_Position.w;
+
+  if (shadowRender == 0) {
+    vec4 tmp = shadowProjView * modelMatrix * vec4(new_pos, 1.0);
+    shadowTexPos = (tmp.xyz / tmp.w) * 0.5 + 0.5;
+  }
+
   #include <clipping_planes_vertex>
 }

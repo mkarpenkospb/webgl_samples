@@ -43,6 +43,16 @@ import water_normals from '../resources/water/6185-normal.jpg'
 let allView = new THREE.Plane(new THREE.Vector3(0, -1, 0), 0);
 // let allView = new THREE.Plane(new THREE.Vector3(0, 1, 0), -10000);
 
+function create_terra_vertices() {
+    let heightMap = tex_loader.load(terra);
+    heightMap.wrapS = THREE.RepeatWrapping;
+    heightMap.wrapT = THREE.RepeatWrapping;
+
+}
+
+
+
+
 function create_tb(material) {
     // https://habr.com/ru/post/415579/
     let pos0  = new THREE.Vector3(-1.0,  0.0, -1.0);
@@ -109,11 +119,16 @@ export function water_plane(area) {
     area.waterMaterial = new THREE.ShaderMaterial({
         uniforms : {
             water_level: {value: 100.0},
-            u_scene_reflect : {value: null},
-            u_scene_refract : {value: null},
+            u_scene_reflect : {value: waterNormalMap},
+            u_scene_refract : {value: waterNormalMap},
             n_water: {value: 1.0},
             n_air: {value: 1.0},
             normal_map_fst: {value: waterNormalMap},
+
+            shadowProjView: {value: waterNormalMap},
+            shadowsTexture: {value: waterNormalMap},
+            shadowRender : {value: 0},
+
             ripple: {value: 60.0},
             time: {value: 0.0},
             tangent: {value:  new THREE.Vector3(0.0, 0.0, 0.0)},
@@ -128,6 +143,7 @@ export function water_plane(area) {
 
     area.water = new THREE.Mesh(geometry, area.waterMaterial);
     area.scene.add(area.water);
+    // area.orthoScene.add(area.water);
 }
 
 
@@ -178,6 +194,12 @@ export function setUpTerra(area) {
                 u_upper_tex: {value: upper_tex},
                 u_lower_tex: {value: lower_tex},
                 u_middle_tex: {value: middle_tex},
+
+                shadowsTexture: {value: middle_tex},
+                shadowIntensity: {value: 0.1},
+                shadowProjView: {value: new THREE.Matrix4()},
+                shadowRender : {value: 0},
+
                 details_tex: {value: details_tex},
                 details_tex_snow: {value: details_snow_tex},
                 details_tex_grass: {value: details_grass_tex},
@@ -201,8 +223,8 @@ export function setUpTerra(area) {
     let plane_mesh = new THREE.Mesh(plane, area.terraMaterial);
     plane_mesh.rotation.x = -Math.PI / 2;
     // plane_mesh.position.y = -100;
-
     area.scene.add(plane_mesh);
+    // area.orthoScene.add(plane_mesh);
 }
 
 export function setUpLighthouse(area) {
@@ -217,29 +239,24 @@ export function setUpLighthouse(area) {
     heightMap.wrapS = THREE.RepeatWrapping;
     heightMap.wrapT = THREE.RepeatWrapping;
 
+    let setUpTexture = function (tex) {
+        tex.encoding = THREE.sRGBEncoding;
+        tex.flipY = false;
+        tex.wrapS = THREE.RepeatWrapping;
+        tex.wrapT = THREE.RepeatWrapping;
+    }
+
     let door_color_tex = tex_loader.load(door_color);
-    door_color_tex.encoding = THREE.sRGBEncoding;
-    door_color_tex.flipY = false;
-    door_color_tex.wrapS = THREE.RepeatWrapping;
-    door_color_tex.wrapT = THREE.RepeatWrapping;
+    setUpTexture(door_color_tex)
 
     let top_color_tex = tex_loader.load(top_color);
-    top_color_tex.encoding = THREE.sRGBEncoding;
-    top_color_tex.flipY = false;
-    top_color_tex.wrapS = THREE.RepeatWrapping;
-    top_color_tex.wrapT = THREE.RepeatWrapping;
+    setUpTexture(top_color_tex)
 
     let body_color_tex = tex_loader.load(body_color);
-    body_color_tex.encoding = THREE.sRGBEncoding;
-    body_color_tex.flipY = false;
-    body_color_tex.wrapS = THREE.RepeatWrapping;
-    body_color_tex.wrapT = THREE.RepeatWrapping;
+    setUpTexture(body_color_tex)
 
     let base_color_tex = tex_loader.load(base_color);
-    base_color_tex.encoding = THREE.sRGBEncoding;
-    base_color_tex.flipY = false;
-    base_color_tex.wrapS = THREE.RepeatWrapping;
-    base_color_tex.wrapT = THREE.RepeatWrapping;
+    setUpTexture(base_color_tex)
 
     let loader = new OBJLoader();
     area.lighthouseObject = loader.parse(lighthouse_model);
@@ -270,6 +287,11 @@ export function setUpLighthouse(area) {
                     x_pos : {value: 1000},
                     z_pos : {value: 1000},
                     height_map: {value: heightMap},
+
+                    shadowProjView: {value:  new THREE.Matrix4()},
+                    shadowsTexture: {value: heightMap},
+                    shadowRender : {value: 0},
+
                     scale: {value: 200.0},
                     u_color: {value: color}
                 },
@@ -313,4 +335,16 @@ export function setUpLighthouse(area) {
     });
 
     area.scene.add(area.lighthouseObject);
+    // area.orthoScene.add(area.lighthouseObject);
+}
+
+export function setTestGeometry(area) {
+
+    const geometry = new THREE.PlaneGeometry(642, 189, 642, 189);
+    const material = new THREE.MeshPhongMaterial({
+        map: area.depthTexture,
+    });
+
+    area.plane = new THREE.Mesh(geometry, material);
+    area.scene.add(area.plane);
 }

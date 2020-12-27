@@ -2,17 +2,21 @@ in vec3 out_normal;
 in vec3 pos_world;
 in vec2 vUV;
 in mat3 TBN;
-
+in vec3 shadowTexPos;
 
 uniform samplerCube u_scene_reflect;
 uniform samplerCube u_scene_refract;
 
 uniform sampler2D normal_map_fst;
 
+uniform sampler2D shadowsTexture;
+
 uniform float n_water;
 uniform float n_air;
 uniform float ripple;
 uniform float time;
+
+uniform int shadowRender;
 
 void main()
 {
@@ -22,6 +26,7 @@ void main()
   sampleNormalSnd = normalize(sampleNormalSnd * 2.0 - 1.0);
   vec3 sampleNormal = normalize(sampleNormalFst + sampleNormalSnd);
   vec3 Normal = normalize(TBN * sampleNormal);
+
 
   vec3 i = normalize(pos_world - cameraPosition);
   vec3 r = reflect(i, Normal);
