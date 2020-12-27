@@ -8,6 +8,7 @@ import * as THREEFULL from 'three-full';
 import {setUpTerra, setUpLighthouse, water_plane} from './AreaSettings.js';
 import * as dat from 'dat.gui'
 import {setTestGeometry} from "./AreaSettings";
+import {setUpShadowLighthouse, setUpShadowTerra} from "./ShadowAreaSettings";
 
 
 let reflectivePlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -100);
@@ -21,6 +22,8 @@ export class ViewArea extends Component {
         this.divRef = React.createRef();
 
         this.scene = new THREE.Scene();
+        this.shadowScene = new THREE.Scene();
+
         this.camera = new THREE.PerspectiveCamera(90, 1, 0.1, 5000);
         this.orthoCamera = new THREE.OrthographicCamera(-700, 700, 700, -3, -300, 500);
 
@@ -47,6 +50,10 @@ export class ViewArea extends Component {
 
         setUpTerra(this);
         setUpLighthouse(this);
+
+        setUpShadowTerra(this);
+        setUpShadowLighthouse(this);
+
         // water_plane(this);
 
         this.options = {
@@ -132,7 +139,7 @@ export class ViewArea extends Component {
             depthTexture : this.depthTexture,
         })
         this.shadowDepthTarget.depthBuffer = true;
-
+        this.depthTexture.needsUpdate = true;
         // dowDepthTarget.depthBuffer = true;
         // this.shadowDepthTarget.depthTexture = new THREE.DepthTexture()
         // this.shadowDepthTarget.depthTexture.format =
@@ -190,10 +197,8 @@ export class ViewArea extends Component {
 
             // ----------------------- render shadows depth -------------------------
 
-            this.shadowRenderState(1);
-
             renderer.setRenderTarget(this.shadowDepthTarget);
-            renderer.render(this.scene, this.orthoCamera);
+            renderer.render(this.shadowScene, this.orthoCamera);
             renderer.setRenderTarget(null);
 
             for (let material of this.lighthouseMaterialMap.values()) {
@@ -203,10 +208,6 @@ export class ViewArea extends Component {
 
             this.terraMaterial.uniforms.shadowsTexture.value = this.depthTexture;
             this.terraMaterial.uniforms.shadowProjView.value = this.orthoMatrix;
-            // this.waterMaterial.uniforms.shadowsTexture.value = this.shadowDepthTarget.depthTexture;
-            // this.waterMaterial.uniforms.shadowProjView.value = orthoMatrix;
-
-            this.shadowRenderState(0);
 
             if (this.options.camera === 0) {
                 renderer.render(this.scene, this.camera);
@@ -236,6 +237,7 @@ export class ViewArea extends Component {
                 depthTexture : this.depthTexture,
             })
             this.shadowDepthTarget.depthBuffer = true;
+            this.depthTexture.needsUpdate = true;
 
             this.orthoCamera = new THREE.OrthographicCamera(this.options.frustumSize * this.aspectRatio / - 2,
                 this.options.frustumSize * this.aspectRatio / 2,
@@ -270,21 +272,16 @@ export class ViewArea extends Component {
         }
     }
 
-    shadowRenderState = (state) => {
-        for (let material of this.lighthouseMaterialMap.values()) {
-            material.uniforms.shadowRender.value = state;
-        }
-        this.terraMaterial.uniforms.shadowRender.value = state;
-        // this.shadowDepthTarget.depthTexture = state === 1 ? this.depthTexture : null;
-
-        // this.waterMaterial.uniforms.shadowRender.value = state;
-    }
-
     updateUniforms = () => {
 
         this.controls.update();
 
         this.lighthouseObject.scale.set(
+            this.options.lighthouseScale,
+            this.options.lighthouseScale,
+            this.options.lighthouseScale);
+
+        this.shadowLighthouseObject.scale.set(
             this.options.lighthouseScale,
             this.options.lighthouseScale,
             this.options.lighthouseScale);
@@ -295,6 +292,12 @@ export class ViewArea extends Component {
             material.uniforms.scale.value = this.options.terraScale;
         }
 
+        this.shadowBaseMaterial.uniforms.x_pos.value = this.options.lposx;
+        this.shadowBaseMaterial.uniforms.z_pos.value = this.options.lposz;
+        this.shadowBaseMaterial.uniforms.scale.value = this.options.terraScale;
+
+
+        this.shadowTerraMaterial.uniforms.scale.value = this.options.terraScale;
         this.terraMaterial.uniforms.scale.value = this.options.terraScale;
         this.terraMaterial.uniforms.shadowIntensity.value = this.options.shadowIntensity;
         this.terraMaterial.uniforms.threshold.value = this.options.details_threshold;

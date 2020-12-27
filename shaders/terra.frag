@@ -30,7 +30,7 @@ varying float brightness;
 varying vec2 vUV;
 
 varying float distToCamera;
-uniform int shadowRender;
+
 void main()
 {
   #include <clipping_planes_fragment>
@@ -53,11 +53,11 @@ void main()
 
   gl_FragColor = (vec4(0.0, 0.0, 0.0, 1.0) + lower  + middle + upper);
 
-  if (shadowRender == 0 && shadowTexPos.x >= 0.0 && shadowTexPos.x <= 1.0 && shadowTexPos.y >= 0.0 && shadowTexPos.y <= 1.0) {
-//    shadowCoeff = shadowIntensity;
+  if (shadowTexPos.x >= 0.0 && shadowTexPos.x <= 1.0 && shadowTexPos.y >= 0.0 && shadowTexPos.y <= 1.0) {
+
     float res = texture2D(shadowsTexture, shadowTexPos.xy).x;
     if (res < (shadowTexPos.z - 0.001)) {
-      gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+      gl_FragColor = mix(vec4(0.0, 0.0, 0.0, 1.0), gl_FragColor, 0.4);
     }
 //    else if (res - shadowTexPos.z < 0.0001 || res - shadowTexPos.z > 0.0001) {
 //      gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0);

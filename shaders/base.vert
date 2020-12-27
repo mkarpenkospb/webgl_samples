@@ -14,16 +14,13 @@ uniform float y_pos;
 uniform vec3 min_point;
 uniform float x_pos;
 uniform float z_pos;
-uniform int shadowRender;
+
 
 
 void main() {
     #include <begin_vertex>
 
-    if (shadowRender == 0) {
-        vec4 tmp = shadowProjView * vec4(position, 1);
-        shadowTexPos = ((tmp.xyz / tmp.w) * vec3(0.5)) + vec3(0.5);
-    }
+
 
 
     out_normal = normalize(normalMatrix * normal);
@@ -41,5 +38,10 @@ void main() {
     #include <project_vertex>
     mvPosition = viewMatrix  * vec4(new_pos, 1.0);
     gl_Position = projectionMatrix * mvPosition;
+
+
+    vec4 tmp = shadowProjView * vec4(new_pos, 1);
+    shadowTexPos = ((tmp.xyz / tmp.w) * vec3(0.5)) + vec3(0.5);
+
     #include <clipping_planes_vertex>
 }

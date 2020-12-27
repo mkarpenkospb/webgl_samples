@@ -7,6 +7,9 @@ import * as THREE from 'three';
 //shaders
 import vxShaderTerra from '../shaders/terra.vert';
 import fragShaderTerra from '../shaders/terra.frag';
+
+import vxShaderTerra_shadows from '../shaders/shadows/terra.vert';
+import fragShaderTerra_shadows from '../shaders/shadows/terra.frag';
 //model
 import terra from '../resources/terra/terra6.png';
 
@@ -23,6 +26,11 @@ import details_grass from '../resources/tiles/tekstura-travy21_bw.jpg';
 
 import vxShaderBase from '../shaders/base.vert';
 import fragShaderBase from '../shaders/base.frag';
+
+import vxShaderBase_shadows from '../shaders/shadows/base.vert';
+import fragShaderBase_shadows from '../shaders/shadows/base.frag';
+
+
 
 //------------------------------------------------------------------------
 import lighthouse_model from "../resources/lighthouse/Mayak_3.obj";
@@ -42,14 +50,6 @@ import water_normals from '../resources/water/6185-normal.jpg'
 
 let allView = new THREE.Plane(new THREE.Vector3(0, -1, 0), 0);
 // let allView = new THREE.Plane(new THREE.Vector3(0, 1, 0), -10000);
-
-function create_terra_vertices() {
-    let heightMap = tex_loader.load(terra);
-    heightMap.wrapS = THREE.RepeatWrapping;
-    heightMap.wrapT = THREE.RepeatWrapping;
-
-}
-
 
 
 
@@ -142,6 +142,9 @@ export function water_plane(area) {
     create_tb(area.waterMaterial);
 
     area.water = new THREE.Mesh(geometry, area.waterMaterial);
+
+
+
     area.scene.add(area.water);
     // area.orthoScene.add(area.water);
 }
@@ -198,7 +201,6 @@ export function setUpTerra(area) {
                 shadowsTexture: {value: middle_tex},
                 shadowIntensity: {value: 0.1},
                 shadowProjView: {value: new THREE.Matrix4()},
-                shadowRender : {value: 0},
 
                 details_tex: {value: details_tex},
                 details_tex_snow: {value: details_snow_tex},
@@ -290,7 +292,6 @@ export function setUpLighthouse(area) {
 
                     shadowProjView: {value:  new THREE.Matrix4()},
                     shadowsTexture: {value: heightMap},
-                    shadowRender : {value: 0},
 
                     scale: {value: 200.0},
                     u_color: {value: color}
