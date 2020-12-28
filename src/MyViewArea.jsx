@@ -7,8 +7,8 @@ import * as THREEFULL from 'three-full';
 
 import {setUpTerra, setUpLighthouse, water_plane} from './AreaSettings.js';
 import * as dat from 'dat.gui'
-import {setTestGeometry} from "./AreaSettings";
-import {setUpShadowLighthouse, setUpShadowTerra} from "./ShadowAreaSettings";
+import {setTestGeometry, setUpBoat} from "./AreaSettings";
+import {setUpShadowBoat, setUpShadowLighthouse, setUpShadowTerra} from "./ShadowAreaSettings";
 
 
 let reflectivePlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -100);
@@ -38,8 +38,10 @@ export class ViewArea extends Component {
 
         setUpShadowTerra(this);
         setUpShadowLighthouse(this);
+        setUpShadowBoat(this);
 
         water_plane(this);
+        setUpBoat(this);
 
         this.options = {
             color: "#bd9c36",
@@ -47,13 +49,19 @@ export class ViewArea extends Component {
             terraScale: 277,
             lighthouseScale: 63,
             camera: 0,
+
             lposx: -80,
             lposz: -147,
+
+            bposx: 250,
+            bposz: 250,
 
 
             lookx: 0,
             looky: 0,
             lookz: 0,
+
+
 
 
             qx: -0.2,
@@ -193,6 +201,11 @@ export class ViewArea extends Component {
             this.terraMaterial.uniforms.shadowProjView.value = this.orthoMatrix;
             this.terraMaterial.uniforms.shadowNearProjView.value = this.orthoNearMatrix;
 
+            this.boatMaterial.uniforms.shadowsTexture.value = this.depthTexture;
+            this.boatMaterial.uniforms.shadowsNearTexture.value = this.depthNearTexture;
+            this.boatMaterial.uniforms.shadowProjView.value = this.orthoMatrix;
+            this.boatMaterial.uniforms.shadowNearProjView.value = this.orthoNearMatrix;
+
             switch (this.options.camera) {
                 case 0:
                     renderer.render(this.scene, this.camera);
@@ -291,11 +304,12 @@ export class ViewArea extends Component {
         this.shadowDepthTarget = new THREE.WebGLRenderTarget(canvas.width, canvas.height, {
             depthTexture : this.depthTexture,
         })
+
         this.shadowDepthTarget.depthBuffer = true;
         this.depthTexture.needsUpdate = true;
 
-        this.depthNearTexture = new THREE.DepthTexture(canvas.width, canvas.height);
-        this.shadowNearDepthTarget = new THREE.WebGLRenderTarget(canvas.width, canvas.height, {
+        this.depthNearTexture = new THREE.DepthTexture(2 * canvas.width, 2 * canvas.height);
+        this.shadowNearDepthTarget = new THREE.WebGLRenderTarget(2 * canvas.width, 2 * canvas.height, {
             depthTexture : this.depthNearTexture,
         })
         this.shadowNearDepthTarget.depthBuffer = true;
@@ -352,6 +366,14 @@ export class ViewArea extends Component {
             this.options.lighthouseScale,
             this.options.lighthouseScale);
 
+        this.boatMaterial.uniforms.x_pos.value = this.options.bposx;
+        this.boatMaterial.uniforms.z_pos.value = this.options.bposz;
+        this.boatMaterial.uniforms.nearThreshold.value = this.options.nearThreshold;
+
+        this.boatShadowMaterial.uniforms.x_pos.value = this.options.bposx;
+        this.boatShadowMaterial.uniforms.z_pos.value = this.options.bposz;
+
+
         for (let material of this.lighthouseMaterialMap.values()) {
             material.uniforms.x_pos.value = this.options.lposx;
             material.uniforms.z_pos.value = this.options.lposz;
@@ -390,8 +412,13 @@ export class ViewArea extends Component {
         // fields.add(this.options, "terraScale", 0, 1000, 1);
         fields.add(this.options, "water_level", 0, 200, 0.5);
         // fields.add(this.options, "lighthouseScale", 0, 200, 1);
+
         fields.add(this.options, "lposx", -1000, 1000, 0.5);
         fields.add(this.options, "lposz", -1000, 1000, 0.5);
+
+        fields.add(this.options, "bposx", -1000, 1000, 0.5);
+        fields.add(this.options, "bposz", -1000, 1000, 0.5);
+
         fields.add(this.options, "water_ripple", 1.0, 500.0, 1);
         // fields.add(this.options, "details_threshold", 0.0, 100.0, 1.0);
         // fields.add(this.options, "snow_details_intensive", 0.0, 4.0, 0.05);

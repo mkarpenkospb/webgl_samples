@@ -20,6 +20,16 @@ import fragShaderBase_shadows from '../shaders/shadows/base.frag';
 import lighthouse_model from "../resources/lighthouse/Mayak_3.obj";
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 
+
+
+// ----------------------------- boat ------------------------------------------
+import boat_model from "../resources/boat/boat.obj";
+
+import vxShaderBoat from '../shaders/shadows/boat.vert';
+import fragShaderBoat from '../shaders/shadows/boat.frag';
+
+
+
 export function setUpShadowTerra(area) {
 
     let tex_loader = new THREE.TextureLoader();
@@ -113,5 +123,53 @@ export function setUpShadowLighthouse(area) {
 
 
     area.shadowScene.add(area.shadowLighthouseObject);
+
+}
+
+
+export function setUpShadowBoat(area) {
+
+    let loader = new OBJLoader();
+    area.boatShadowObject = loader.parse(boat_model);
+
+    // find min point to properly set all the positions on shader
+    let min_pos =  new THREE.Vector3(Infinity, Infinity, Infinity);
+
+    area.boatShadowObject.traverse((child) => {
+        if (child instanceof THREE.Mesh) {
+            let positions = child.geometry.attributes.position.array;
+            for (let i = 0; i < positions.length; i+=3) {
+                let x = positions[i];
+                let y = positions[i + 1];
+                let z = positions[i + 2];
+                if (x < min_pos.x && y < min_pos.y && z < min_pos.z) {
+                    min_pos.x = x;
+                    min_pos.y = y;
+                    min_pos.z = z;
+                }
+            }
+        }
+    });
+
+    area.boatShadowMaterial = new THREE.ShaderMaterial({
+            uniforms: {
+                min_point: {value: min_pos},
+                x_pos: {value: 250},
+                z_pos: {value: 250},
+                water_level: {value: 100},
+            },
+            vertexShader: vxShaderBoat,
+            fragmentShader: fragShaderBoat,
+        }
+    );
+
+    area.boatShadowObject.traverse((child) => {
+        if (child instanceof THREE.Mesh) {
+            child.material = area.boatShadowMaterial;
+        }
+    });
+
+    area.boatShadowObject.scale.set(5, 5, 5);
+    area.shadowScene.add(area.boatShadowObject);
 
 }

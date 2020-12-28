@@ -44,7 +44,7 @@ void main() {
     vec4 tmp = shadowProjView * vec4(new_pos, 1);
     shadowTexPos = ((tmp.xyz / tmp.w) * vec3(0.5)) + vec3(0.5);
 
-    tmp = shadowNearProjView * modelMatrix * vec4(new_pos, 1.0);
+    tmp = shadowNearProjView * vec4(new_pos, 1.0);
     shadowNearTexPos = (tmp.xyz / tmp.w) * 0.5 + 0.5;
 
     #include <clipping_planes_vertex>

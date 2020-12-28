@@ -27,9 +27,6 @@ import details_grass from '../resources/tiles/tekstura-travy21_bw.jpg';
 import vxShaderBase from '../shaders/base.vert';
 import fragShaderBase from '../shaders/base.frag';
 
-import vxShaderBase_shadows from '../shaders/shadows/base.vert';
-import fragShaderBase_shadows from '../shaders/shadows/base.frag';
-
 
 
 //------------------------------------------------------------------------
@@ -51,6 +48,15 @@ import water_normals from '../resources/water/6185-normal.jpg'
 let allView = new THREE.Plane(new THREE.Vector3(0, -1, 0), 0);
 // let allView = new THREE.Plane(new THREE.Vector3(0, 1, 0), -10000);
 
+
+
+// ------------------------------------ boat ------------------------------
+
+import boat_model from "../resources/boat/boat.obj";
+
+import wood2_color from '../resources/boat/Texture/wood2.jpg';
+import vxShaderBoat from '../shaders/boat.vert';
+import fragShaderBoat from '../shaders/boat.frag';
 
 
 function create_tb(material) {
@@ -362,4 +368,83 @@ export function setTestGeometry(area) {
 
     area.plane = new THREE.Mesh(geometry, material);
     area.scene.add(area.plane);
+}
+
+
+export function setUpBoat(area) {
+
+    let tex_loader = new THREE.TextureLoader();
+
+    let setUpTexture = function (tex) {
+        tex.encoding = THREE.sRGBEncoding;
+        tex.flipY = false;
+        tex.wrapS = THREE.RepeatWrapping;
+        tex.wrapT = THREE.RepeatWrapping;
+    }
+
+
+    let wood2_tex = tex_loader.load(wood2_color);
+    setUpTexture(wood2_tex);
+
+
+    let loader = new OBJLoader();
+    area.boatObject = loader.parse(boat_model);
+
+    // find min point to properly set all the positions on shader
+    let min_pos =  new THREE.Vector3(Infinity, Infinity, Infinity);
+
+    area.boatObject.traverse((child) => {
+        if (child instanceof THREE.Mesh) {
+            let positions = child.geometry.attributes.position.array;
+            for (let i = 0; i < positions.length; i+=3) {
+                let x = positions[i];
+                let y = positions[i + 1];
+                let z = positions[i + 2];
+                if (x < min_pos.x && y < min_pos.y && z < min_pos.z) {
+                    min_pos.x = x;
+                    min_pos.y = y;
+                    min_pos.z = z;
+                }
+            }
+        }
+    });
+
+    area.boatMaterial = new THREE.ShaderMaterial({
+                uniforms: {
+                    min_point: {value: min_pos},
+                    x_pos: {value: 250},
+                    z_pos: {value: 250},
+                    water_level: {value: 100},
+                    colors: {value: wood2_tex},
+
+                    shadowProjView: {value:  new THREE.Matrix4()},
+                    shadowsTexture: {value: wood2_tex},
+
+                    shadowsNearTexture: {value: wood2_tex},
+                    shadowNearProjView: {value: new THREE.Matrix4()},
+
+
+                    nearThreshold: {value: 10.0},
+
+                },
+                vertexShader: vxShaderBoat,
+                fragmentShader: fragShaderBoat,
+                // clippingPlanes: [allView],
+                // clipping: true,
+            }
+        );
+
+    //
+    //
+
+    area.boatObject.traverse((child) => {
+        if (child instanceof THREE.Mesh) {
+                    child.material = area.boatMaterial;
+        }
+    });
+
+    area.boatObject.scale.set(5, 5, 5);
+    //
+    area.scene.add(area.boatObject);
+    // area.orthoScene.add(area.lighthouseObject);
 }

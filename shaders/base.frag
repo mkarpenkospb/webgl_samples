@@ -21,7 +21,6 @@ void main()
     gl_FragColor = vec4(texture2D(u_color, vUV).rgb, 1.0);
 
     vec3 texCoords = distToCamera < nearThreshold ? shadowNearTexPos : shadowTexPos;
-    //  vec3 texCoords = shadowTexPos;
 
     if (texCoords.x >= 0.0 && texCoords.x <= 1.0 && texCoords.y >= 0.0 && texCoords.y <= 1.0) {
 
