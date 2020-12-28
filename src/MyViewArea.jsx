@@ -302,8 +302,6 @@ export class ViewArea extends Component {
 
         this.orthoNearMatrix.multiplyMatrices(this.orthoNearCamera.projectionMatrix, this.orthoNearCamera.matrixWorldInverse);
 
-
-        // this.shadowDepthTarget = this.depthTexture;
         renderer.setRenderTarget(this.shadowNearDepthTarget);
         renderer.render(this.shadowScene, this.orthoNearCamera);
         renderer.setRenderTarget(null);
@@ -426,6 +424,7 @@ export class ViewArea extends Component {
         fields.add(this.options, "lposx", -1000, 1000, 0.5);
         fields.add(this.options, "lposz", -1000, 1000, 0.5);
         fields.add(this.options, "water_ripple", 1.0, 500.0, 1);
+        fields.add(this.options, "rotationSpeed", 0, 50, 1);
         fields.add(this.options, "camera", 0, 2, 1);
         fields.open();
     }
