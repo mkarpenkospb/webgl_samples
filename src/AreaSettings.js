@@ -423,19 +423,16 @@ export function setUpBoat(area) {
                     shadowsNearTexture: {value: wood2_tex},
                     shadowNearProjView: {value: new THREE.Matrix4()},
 
-                    epsilon: {value : 0.0001},
+                    nearEpsilon: {value : 0.0001},
+                    farEpsilon: {value : 0.001},
+
                     nearThreshold: {value: 10.0},
 
                 },
                 vertexShader: vxShaderBoat,
                 fragmentShader: fragShaderBoat,
-                // clippingPlanes: [allView],
-                // clipping: true,
             }
         );
-
-    //
-    //
 
     area.boatObject.traverse((child) => {
         if (child instanceof THREE.Mesh) {

@@ -47,7 +47,7 @@ export class ViewArea extends Component {
 
         this.options = {
             color: "#bd9c36",
-            rotationSpeed: 16,
+            rotationSpeed: 7,
             terraScale: 277,
             lighthouseScale: 63,
             camera: 0,
@@ -56,19 +56,11 @@ export class ViewArea extends Component {
             lposz: -147,
 
 
-
-            bposx: 250,
+            bposx: 280,
             bposz: 250,
-            radius: 100,
-            epsilon: 0.0002,
-
-
-
-            lookx: 0,
-            looky: 0,
-            lookz: 0,
-
-
+            radius: 207,
+            nearEpsilon: 0.0002,
+            farEpsilon: 0.002,
 
             qx: -0.2,
             qy: 0.4,
@@ -78,7 +70,6 @@ export class ViewArea extends Component {
             orth_far: 2500,
             nearThreshold: 228.0,
 
-            frustumSize: far,
 
             constant: 1000,
             water_level: 100,
@@ -294,7 +285,7 @@ export class ViewArea extends Component {
 
 
     renderNearShadow = (renderer) => {
-        this.options.frustumSize = near;
+
         let destination = new THREE.Vector3();
 
         destination.subVectors(this.controls.target, this.camera.position);
@@ -389,7 +380,8 @@ export class ViewArea extends Component {
         this.boatMaterial.uniforms.x_pos.value = this.options.bposx;
         this.boatMaterial.uniforms.z_pos.value = this.options.bposz;
         this.boatMaterial.uniforms.nearThreshold.value = this.options.nearThreshold;
-        this.boatMaterial.uniforms.epsilon.value = this.options.epsilon;
+        this.boatMaterial.uniforms.nearEpsilon.value = this.options.nearEpsilon;
+        this.boatMaterial.uniforms.farEpsilon.value = this.options.farEpsilon;
 
         this.boatShadowMaterial.uniforms.x_pos.value = this.options.bposx;
         this.boatShadowMaterial.uniforms.z_pos.value = this.options.bposz;
@@ -430,32 +422,10 @@ export class ViewArea extends Component {
         this.gui = new dat.GUI({name: "My GUI"});
 
         const fields = this.gui.addFolder("Field");
-        // fields.add(this.options, "terraScale", 0, 1000, 1);
-        fields.add(this.options, "water_level", 0, 200, 0.5);
-        // fields.add(this.options, "lighthouseScale", 0, 200, 1);
 
         fields.add(this.options, "lposx", -1000, 1000, 0.5);
         fields.add(this.options, "lposz", -1000, 1000, 0.5);
-
-
-        fields.add(this.options, "radius", 50, 500, 1);
-
-        fields.add(this.options, "bposx", -100, 500, 0.5);
-        fields.add(this.options, "bposz", -100, 500, 0.5);
-        fields.add(this.options, "epsilon", 0, 0.5, 0.0001);
-        fields.add(this.options, "rotationSpeed", 0, 100, 1);
-
         fields.add(this.options, "water_ripple", 1.0, 500.0, 1);
-        // fields.add(this.options, "details_threshold", 0.0, 100.0, 1.0);
-        // fields.add(this.options, "snow_details_intensive", 0.0, 4.0, 0.05);
-        // fields.add(this.options, "stone_details_intensive", 0.0, 4.0, 0.05);
-        // fields.add(this.options, "grass_details_intensive", 0.0, 4.0, 0.05);
-        // fields.add(this.options, "snow_details_freq", 1.0, 1000.0, 1.0);
-        // fields.add(this.options, "stone_details_freq", 1.0, 1000.0, 1.0);
-        // fields.add(this.options, "grass_details_freq", 1.0, 1000.0, 1.0);
-        fields.add(this.options, "shadowIntensity", 0.0, 3.0, 0.01);
-        fields.add(this.options, "nearThreshold", 0.0, 400.0, 0.5);
-
         fields.add(this.options, "camera", 0, 2, 1);
         fields.open();
     }

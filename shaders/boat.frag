@@ -5,7 +5,9 @@ uniform vec3 u_color;
 uniform sampler2D colors;
 uniform float nearThreshold;
 
-uniform float epsilon;
+uniform float farEpsilon;
+uniform float nearEpsilon;
+
 uniform sampler2D shadowsTexture;
 uniform sampler2D shadowsNearTexture;
 in vec3 shadowTexPos;
@@ -17,6 +19,7 @@ void main()
     gl_FragColor = vec4(texture2D(colors, vUV).rgb, 1.0);
 
     vec3 texCoords = distToCamera < nearThreshold ? shadowNearTexPos : shadowTexPos;
+    float epsilon = distToCamera < nearThreshold ? nearEpsilon : farEpsilon;
     //  vec3 texCoords = shadowTexPos;
     if (texCoords.x >= 0.0 && texCoords.x <= 1.0 && texCoords.y >= 0.0 && texCoords.y <= 1.0) {
 
