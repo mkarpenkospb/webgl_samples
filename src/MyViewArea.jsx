@@ -14,6 +14,9 @@ import {setUpShadowLighthouse, setUpShadowTerra} from "./ShadowAreaSettings";
 let reflectivePlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -100);
 let refractivePlane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 100);
 let allView = new THREE.Plane(new THREE.Vector3(0, 1, 0), 1000);
+const far = 1000;
+const near = 386;
+
 
 export class ViewArea extends Component {
     constructor() {
@@ -23,30 +26,12 @@ export class ViewArea extends Component {
 
         this.scene = new THREE.Scene();
         this.shadowScene = new THREE.Scene();
-
         this.camera = new THREE.PerspectiveCamera(90, 1, 0.1, 5000);
-        this.orthoCamera = new THREE.OrthographicCamera(-700, 700, 700, -3, -300, 500);
-
-        this.quanterion = new THREE.Quaternion(2,4,5,1);
-        this.orthoCamera.applyQuaternion(this.quanterion);
-        this.orthoCamera.quaternion.normalize();
-
         this.aspectRatio = 1;
-        // this.orthoCamera.position.set(5,2,-4);
-        // this.orthoCamera.updateMatrix();
-        // this.orthoCamera.updateProjectionMatrix();
-        // this.orthoCamera.updateMatrixWorld();
-
-        this.orthoMatrix = new THREE.Matrix4();
-        this.orthoMatrix.multiplyMatrices(this.orthoCamera.projectionMatrix, this.orthoCamera.matrixWorldInverse);
 
         this.camera.position.z = 300;
         this.camera.position.x = -100;
         this.camera.position.y = 250;
-
-        // this.orthoCamera.position.z = 300;
-        // this.orthoCamera.position.x = 100;
-        // this.orthoCamera.position.y = 250;
 
         setUpTerra(this);
         setUpLighthouse(this);
@@ -71,14 +56,14 @@ export class ViewArea extends Component {
             lookz: 0,
 
 
-            qx: -0.4,
-            qy: 0.5,
+            qx: -0.2,
+            qy: 0.4,
             qz: 0,
             qw: 1,
-            orth_near: -876,
-            orth_far: 2000,
+            orth_near: -2500,
+            orth_far: 2500,
 
-            frustumSize: 1000,
+            frustumSize: far,
 
             constant: 1000,
             water_level: 100,
@@ -109,6 +94,8 @@ export class ViewArea extends Component {
             return;
         }
 
+
+        this.setOrthoCamera()
         this.addDatGUI();
 
         let renderer = new THREE.WebGLRenderer({canvas: canvas, context: gl});
@@ -134,15 +121,8 @@ export class ViewArea extends Component {
 
 
         // ------------------------- camera for shadows --------------------------------------------
-        this.depthTexture = new THREE.DepthTexture(canvas.width, canvas.height);
-        this.shadowDepthTarget = new THREE.WebGLRenderTarget(canvas.width, canvas.height, {
-            depthTexture : this.depthTexture,
-        })
-        this.shadowDepthTarget.depthBuffer = true;
-        this.depthTexture.needsUpdate = true;
-        // dowDepthTarget.depthBuffer = true;
-        // this.shadowDepthTarget.depthTexture = new THREE.DepthTexture()
-        // this.shadowDepthTarget.depthTexture.format =
+        this.setDepthTexture(canvas);
+
 
         const renderLoopTick = () => {
             // Handle resize
@@ -197,17 +177,20 @@ export class ViewArea extends Component {
 
             // ----------------------- render shadows depth -------------------------
 
-            renderer.setRenderTarget(this.shadowDepthTarget);
-            renderer.render(this.shadowScene, this.orthoCamera);
-            renderer.setRenderTarget(null);
+            this.renderNearShadow(renderer);
+            this.renderFarShadow(renderer);
 
             for (let material of this.lighthouseMaterialMap.values()) {
                 material.uniforms.shadowsTexture.value = this.depthTexture;
+                material.uniforms.shadowsNearTexture.value = this.depthNearTexture;
                 material.uniforms.shadowProjView.value = this.orthoMatrix;
+                material.uniforms.shadowNearProjView.value = this.orthoNearMatrix;
             }
 
             this.terraMaterial.uniforms.shadowsTexture.value = this.depthTexture;
+            this.terraMaterial.uniforms.shadowsNearTexture.value = this.depthNearTexture;
             this.terraMaterial.uniforms.shadowProjView.value = this.orthoMatrix;
+            this.terraMaterial.uniforms.shadowNearProjView.value = this.orthoNearMatrix;
 
             if (this.options.camera === 0) {
                 renderer.render(this.scene, this.camera);
@@ -232,22 +215,9 @@ export class ViewArea extends Component {
             renderer.setSize(canvas.width, canvas.height);
             this.aspectRatio = canvas.width / canvas.height;
 
-            this.depthTexture = new THREE.DepthTexture(canvas.width, canvas.height);
-            this.shadowDepthTarget = new THREE.WebGLRenderTarget(canvas.width, canvas.height, {
-                depthTexture : this.depthTexture,
-            })
-            this.shadowDepthTarget.depthBuffer = true;
-            this.depthTexture.needsUpdate = true;
+            this.setDepthTexture(canvas);
 
-            this.orthoCamera = new THREE.OrthographicCamera(this.options.frustumSize * this.aspectRatio / - 2,
-                this.options.frustumSize * this.aspectRatio / 2,
-                this.options.frustumSize / 2,
-                this.options.frustumSize / - 2,
-                -1000,
-                1000);
-
-            this.orthoMatrix = new THREE.Matrix4();
-            this.orthoMatrix.multiplyMatrices(this.orthoCamera.projectionMatrix, this.orthoCamera.matrixWorldInverse);
+            this.setOrthoCamera();
 
             const d = new THREE.Vector3();
             const q = new THREE.Quaternion();
@@ -270,6 +240,98 @@ export class ViewArea extends Component {
             this.cubeCameraRefraction.scale.set(s.x, s.y, s.z);
             this.controls = new THREEFULL.OrbitControls(this.camera, canvas);
         }
+    }
+
+    renderFarShadow = (renderer) => {
+        this.options.frustumSize = far;
+        this.orthoCamera.position.set(0, 0, 0);
+        this.updateOrthoCameraState()
+
+        // this.shadowDepthTarget = this.depthTexture;
+        renderer.setRenderTarget(this.shadowDepthTarget);
+        renderer.render(this.shadowScene, this.orthoCamera);
+        renderer.setRenderTarget(null);
+    }
+
+
+    renderNearShadow = (renderer) => {
+        this.options.frustumSize = near;
+        let destination = new THREE.Vector3();
+
+        destination.subVectors(this.controls.target, this.camera.position);
+        destination.normalize();
+
+
+        this.orthoCamera.position.set(
+            this.camera.position.x + 189 * destination.x,
+            this.camera.position.y + 189 * destination.y,
+            this.camera.position.z + 189 * destination.z);
+        this.updateOrthoCameraState()
+
+        // this.shadowDepthTarget = this.depthTexture;
+        renderer.setRenderTarget(this.shadowNearDepthTarget);
+        renderer.render(this.shadowScene, this.orthoCamera);
+        renderer.setRenderTarget(null);
+    }
+
+
+    setDepthTexture = (canvas) =>  {
+        this.depthTexture = new THREE.DepthTexture(canvas.width, canvas.height);
+        this.shadowDepthTarget = new THREE.WebGLRenderTarget(canvas.width, canvas.height, {
+            depthTexture : this.depthTexture,
+        })
+        this.shadowDepthTarget.depthBuffer = true;
+        this.depthTexture.needsUpdate = true;
+
+        this.depthNearTexture = new THREE.DepthTexture(canvas.width, canvas.height);
+        this.shadowNearDepthTarget = new THREE.WebGLRenderTarget(canvas.width, canvas.height, {
+            depthTexture : this.depthNearTexture,
+        })
+        this.shadowNearDepthTarget.depthBuffer = true;
+        this.depthNearTexture.needsUpdate = true;
+    }
+
+    setOrthoCamera = () => {
+
+        this.orthoCamera = new THREE.OrthographicCamera(this.options.frustumSize * this.aspectRatio / - 2,
+            this.options.frustumSize * this.aspectRatio / 2,
+            this.options.frustumSize / 2,
+            this.options.frustumSize / - 2,
+            -1000,
+            1000);
+
+        this.orthoCamera.quaternion.set(this.options.qx, this.options.qy, this.options.qz, this.options.qw);
+        this.orthoCamera.quaternion.normalize();
+        this.orthoCamera.updateProjectionMatrix();
+        this.orthoCamera.updateMatrix();
+        this.orthoCamera.updateMatrixWorld();
+        this.orthoMatrix = new THREE.Matrix4();
+        this.orthoMatrix.multiplyMatrices(this.orthoCamera.projectionMatrix, this.orthoCamera.matrixWorldInverse);
+
+        this.options.frustumSize = near;
+        this.updateOrthoCameraState()
+        this.orthoNearMatrix = new THREE.Matrix4();
+
+        this.orthoNearMatrix.multiplyMatrices(this.orthoCamera.projectionMatrix, this.orthoCamera.matrixWorldInverse);
+
+
+    }
+
+    updateOrthoCameraState = () => {
+        this.orthoCamera.near = this.options.orth_near;
+        this.orthoCamera.far = this.options.orth_far;
+        this.orthoCamera.top = this.options.frustumSize / 2;
+        this.orthoCamera.bottom = this.options.frustumSize / - 2;
+        this.orthoCamera.right = this.options.frustumSize * this.aspectRatio / 2;
+        this.orthoCamera.left = this.options.frustumSize * this.aspectRatio / - 2;
+
+        this.orthoCamera.quaternion.set(this.options.qx, this.options.qy, this.options.qz, this.options.qw);
+        this.orthoCamera.quaternion.normalize();
+        this.orthoCamera.updateProjectionMatrix();
+        this.orthoCamera.updateMatrix();
+        this.orthoCamera.updateMatrixWorld();
+
+        this.orthoMatrix.multiplyMatrices(this.orthoCamera.projectionMatrix, this.orthoCamera.matrixWorldInverse);
     }
 
     updateUniforms = () => {
@@ -308,21 +370,7 @@ export class ViewArea extends Component {
         this.terraMaterial.uniforms.stone_details_freq.value = this.options.stone_details_freq;
         this.terraMaterial.uniforms.grass_details_freq.value = this.options.grass_details_freq;
 
-
-        this.orthoCamera.near = this.options.orth_near;
-        this.orthoCamera.far = this.options.orth_far;
-        this.orthoCamera.top = this.options.frustumSize / 2;
-        this.orthoCamera.bottom = this.options.frustumSize / - 2;
-        this.orthoCamera.right = this.options.frustumSize * this.aspectRatio / 2;
-        this.orthoCamera.left = this.options.frustumSize * this.aspectRatio / - 2;
-
-        this.orthoCamera.quaternion.set(this.options.qx, this.options.qy, this.options.qz, this.options.qw);
-        this.orthoCamera.quaternion.normalize();
-        this.orthoCamera.updateProjectionMatrix();
-        this.orthoCamera.updateMatrix();
-        this.orthoCamera.updateMatrixWorld();
-
-        this.orthoMatrix.multiplyMatrices(this.orthoCamera.projectionMatrix, this.orthoCamera.matrixWorldInverse);
+        // this.updateOrthoCameraState();
 
         // this.waterMaterial.uniforms.ripple.value = this.options.water_ripple;
         // this.waterMaterial.uniforms.time.value += (this.curTime.getTime() - this.prevTime.getTime()) / 10000;
@@ -347,15 +395,6 @@ export class ViewArea extends Component {
         // fields.add(this.options, "stone_details_freq", 1.0, 1000.0, 1.0);
         // fields.add(this.options, "grass_details_freq", 1.0, 1000.0, 1.0);
         fields.add(this.options, "shadowIntensity", 0.0, 3.0, 0.01);
-
-        fields.add(this.options, "qx", -1, 1, .1);
-        fields.add(this.options, "qy", -1, 1, .1);
-        fields.add(this.options, "qz", -1, 1, .1);
-        fields.add(this.options, "qw", -1, 1, .1);
-        fields.add(this.options, "orth_near", -2000, 2000, 1);
-        fields.add(this.options, "orth_far", -2000, 2000, 1);
-
-        fields.add(this.options, "frustumSize", 0, 5000, 1);
 
         fields.add(this.options, "camera", 0, 1, 1);
 

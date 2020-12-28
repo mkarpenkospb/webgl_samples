@@ -2,6 +2,9 @@
 //#include <clipping_planes_vertex>
 #include <clipping_planes_pars_fragment>
 
+uniform sampler2D shadowsTexture;
+uniform sampler2D shadowsNearTexture;
+
 in vec3 shadowTexPos;
 in vec3 pos_world;
 uniform vec3 u_color;
@@ -14,7 +17,6 @@ uniform sampler2D details_tex;
 uniform sampler2D details_tex_snow;
 uniform sampler2D details_tex_grass;
 
-uniform sampler2D shadowsTexture;
 
 
 uniform float threshold;
@@ -56,7 +58,7 @@ void main()
   if (shadowTexPos.x >= 0.0 && shadowTexPos.x <= 1.0 && shadowTexPos.y >= 0.0 && shadowTexPos.y <= 1.0) {
 
     float res = texture2D(shadowsTexture, shadowTexPos.xy).x;
-    if (res < (shadowTexPos.z - 0.001)) {
+    if (res < (shadowTexPos.z - 0.01)) {
       gl_FragColor = mix(vec4(0.0, 0.0, 0.0, 1.0), gl_FragColor, 0.4);
     }
 //    else if (res - shadowTexPos.z < 0.0001 || res - shadowTexPos.z > 0.0001) {

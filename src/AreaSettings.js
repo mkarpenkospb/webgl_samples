@@ -199,8 +199,12 @@ export function setUpTerra(area) {
                 u_middle_tex: {value: middle_tex},
 
                 shadowsTexture: {value: middle_tex},
-                shadowIntensity: {value: 0.1},
                 shadowProjView: {value: new THREE.Matrix4()},
+
+                shadowsNearTexture: {value: middle_tex},
+                shadowNearProjView: {value: new THREE.Matrix4()},
+
+                shadowIntensity: {value: 0.1},
 
                 details_tex: {value: details_tex},
                 details_tex_snow: {value: details_snow_tex},
@@ -292,6 +296,9 @@ export function setUpLighthouse(area) {
 
                     shadowProjView: {value:  new THREE.Matrix4()},
                     shadowsTexture: {value: heightMap},
+
+                    shadowsNearTexture: {value: heightMap},
+                    shadowNearProjView: {value: new THREE.Matrix4()},
 
                     scale: {value: 200.0},
                     u_color: {value: color}

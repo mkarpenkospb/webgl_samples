@@ -1,5 +1,8 @@
 #include <clipping_planes_pars_vertex>
 
+uniform mat4 shadowProjView;
+uniform mat4 shadowNearProjView;
+
 out vec3 shadowTexPos;
 out vec3 pos_world;
 varying float brightness;
@@ -9,7 +12,6 @@ uniform float scale;
 varying vec2 vUV;
 
 varying float distToCamera;
-uniform mat4 shadowProjView;
 
 void main()
 {

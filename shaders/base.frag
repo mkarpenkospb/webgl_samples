@@ -3,6 +3,8 @@
 #include <clipping_planes_pars_fragment>
 
 uniform sampler2D shadowsTexture;
+uniform sampler2D shadowsNearTexture;
+
 in vec3 pos_world;
 in vec3 out_normal;
 in vec2 vUV;
