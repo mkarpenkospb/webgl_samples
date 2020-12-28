@@ -39,7 +39,7 @@ export class ViewArea extends Component {
         setUpShadowTerra(this);
         setUpShadowLighthouse(this);
 
-        // water_plane(this);
+        water_plane(this);
 
         this.options = {
             color: "#bd9c36",
@@ -62,7 +62,7 @@ export class ViewArea extends Component {
             qw: 1,
             orth_near: -2500,
             orth_far: 2500,
-            nearThreshold: 10.0,
+            nearThreshold: 228.0,
 
             frustumSize: far,
 
@@ -139,8 +139,8 @@ export class ViewArea extends Component {
 
             // ----------------------- draw reflection, clip everything under the water -----------------------
 
-            // this.water.visible = false;
-/*
+             this.water.visible = false;
+
             for (let material of this.lighthouseMaterialMap.values()) {
                 material.clippingPlanes = [reflectivePlane];
             }
@@ -169,7 +169,7 @@ export class ViewArea extends Component {
             // ----------------------- finally draw the scene -------------------------------------------------
 
             this.water.visible = true;
-*/
+
             for (let material of this.lighthouseMaterialMap.values()) {
                 material.clippingPlanes = [allView]
             }
@@ -378,9 +378,9 @@ export class ViewArea extends Component {
 
         // this.updateOrthoCameraState();
 
-        // this.waterMaterial.uniforms.ripple.value = this.options.water_ripple;
-        // this.waterMaterial.uniforms.time.value += (this.curTime.getTime() - this.prevTime.getTime()) / 10000;
-        // this.waterMaterial.uniforms.water_level.value = this.options.water_level;
+        this.waterMaterial.uniforms.ripple.value = this.options.water_ripple;
+        this.waterMaterial.uniforms.time.value += (this.curTime.getTime() - this.prevTime.getTime()) / 10000;
+        this.waterMaterial.uniforms.water_level.value = this.options.water_level;
     }
 
     addDatGUI = () => {
@@ -388,11 +388,11 @@ export class ViewArea extends Component {
 
         const fields = this.gui.addFolder("Field");
         // fields.add(this.options, "terraScale", 0, 1000, 1);
-        // fields.add(this.options, "water_level", 0, 200, 0.5);
+        fields.add(this.options, "water_level", 0, 200, 0.5);
         // fields.add(this.options, "lighthouseScale", 0, 200, 1);
         fields.add(this.options, "lposx", -1000, 1000, 0.5);
         fields.add(this.options, "lposz", -1000, 1000, 0.5);
-        // fields.add(this.options, "water_ripple", 1.0, 500.0, 1);
+        fields.add(this.options, "water_ripple", 1.0, 500.0, 1);
         // fields.add(this.options, "details_threshold", 0.0, 100.0, 1.0);
         // fields.add(this.options, "snow_details_intensive", 0.0, 4.0, 0.05);
         // fields.add(this.options, "stone_details_intensive", 0.0, 4.0, 0.05);

@@ -125,9 +125,9 @@ export function water_plane(area) {
             n_air: {value: 1.0},
             normal_map_fst: {value: waterNormalMap},
 
-            shadowProjView: {value: waterNormalMap},
-            shadowsTexture: {value: waterNormalMap},
-            shadowRender : {value: 0},
+            // shadowProjView: {value: waterNormalMap},
+            // shadowsTexture: {value: waterNormalMap},
+            // shadowRender : {value: 0},
 
             ripple: {value: 60.0},
             time: {value: 0.0},

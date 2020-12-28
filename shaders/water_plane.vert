@@ -2,21 +2,17 @@ out vec3 pos_world;
 out vec3 out_normal;
 out vec2 vUV;
 out mat3 TBN;
-out vec3 shadowTexPos;
 
 uniform vec3 tangent;
 uniform vec3 bitangent;
 uniform float water_level;
-uniform mat4 shadowProjView;
 
-uniform int shadowRender;
+
+
 
 void main()
 {
-  if (shadowRender == 0) {
-    vec4 tmp = shadowProjView * vec4(position, 1);
-    shadowTexPos = ((tmp.xyz / tmp.w) * vec3(0.5)) + vec3(0.5);
-  }
+
 
   out_normal = normal;
   pos_world = (modelMatrix * vec4(position, 1.0)).xyz + vec3(0.0, water_level, 0.0);
