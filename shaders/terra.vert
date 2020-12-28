@@ -4,6 +4,8 @@ uniform mat4 shadowProjView;
 uniform mat4 shadowNearProjView;
 
 out vec3 shadowTexPos;
+out vec3 shadowNearTexPos;
+
 out vec3 pos_world;
 varying float brightness;
 uniform sampler2D height_map;
@@ -32,6 +34,9 @@ void main()
 
   vec4 tmp = shadowProjView * modelMatrix * vec4(new_pos, 1.0);
   shadowTexPos = (tmp.xyz / tmp.w) * 0.5 + 0.5;
+
+  tmp = shadowNearProjView * modelMatrix * vec4(new_pos, 1.0);
+  shadowNearTexPos = (tmp.xyz / tmp.w) * 0.5 + 0.5;
 
   #include <clipping_planes_vertex>
 }

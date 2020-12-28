@@ -14,7 +14,7 @@ import {setUpShadowLighthouse, setUpShadowTerra} from "./ShadowAreaSettings";
 let reflectivePlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -100);
 let refractivePlane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 100);
 let allView = new THREE.Plane(new THREE.Vector3(0, 1, 0), 1000);
-const far = 1000;
+const far = 1500;
 const near = 386;
 
 
@@ -62,6 +62,7 @@ export class ViewArea extends Component {
             qw: 1,
             orth_near: -2500,
             orth_far: 2500,
+            nearThreshold: 10.0,
 
             frustumSize: far,
 
@@ -192,10 +193,16 @@ export class ViewArea extends Component {
             this.terraMaterial.uniforms.shadowProjView.value = this.orthoMatrix;
             this.terraMaterial.uniforms.shadowNearProjView.value = this.orthoNearMatrix;
 
-            if (this.options.camera === 0) {
-                renderer.render(this.scene, this.camera);
-            } else {
-                renderer.render(this.scene, this.orthoCamera);
+            switch (this.options.camera) {
+                case 0:
+                    renderer.render(this.scene, this.camera);
+                    break;
+                case 1:
+                    renderer.render(this.scene, this.orthoCamera);
+                    break;
+                case 2:
+                    renderer.render(this.scene, this.orthoNearCamera)
+                    break;
             }
             this.prevTime = this.curTime;
             requestAnimationFrame(renderLoopTick);
@@ -243,11 +250,10 @@ export class ViewArea extends Component {
     }
 
     renderFarShadow = (renderer) => {
-        this.options.frustumSize = far;
-        this.orthoCamera.position.set(0, 0, 0);
-        this.updateOrthoCameraState()
-
         // this.shadowDepthTarget = this.depthTexture;
+
+
+
         renderer.setRenderTarget(this.shadowDepthTarget);
         renderer.render(this.shadowScene, this.orthoCamera);
         renderer.setRenderTarget(null);
@@ -261,16 +267,21 @@ export class ViewArea extends Component {
         destination.subVectors(this.controls.target, this.camera.position);
         destination.normalize();
 
-
-        this.orthoCamera.position.set(
+        this.orthoNearCamera.position.set(
             this.camera.position.x + 189 * destination.x,
             this.camera.position.y + 189 * destination.y,
             this.camera.position.z + 189 * destination.z);
-        this.updateOrthoCameraState()
+
+        this.orthoNearCamera.updateProjectionMatrix();
+        this.orthoNearCamera.updateMatrix();
+        this.orthoNearCamera.updateMatrixWorld();
+
+        this.orthoNearMatrix.multiplyMatrices(this.orthoNearCamera.projectionMatrix, this.orthoNearCamera.matrixWorldInverse);
+
 
         // this.shadowDepthTarget = this.depthTexture;
         renderer.setRenderTarget(this.shadowNearDepthTarget);
-        renderer.render(this.shadowScene, this.orthoCamera);
+        renderer.render(this.shadowScene, this.orthoNearCamera);
         renderer.setRenderTarget(null);
     }
 
@@ -293,10 +304,10 @@ export class ViewArea extends Component {
 
     setOrthoCamera = () => {
 
-        this.orthoCamera = new THREE.OrthographicCamera(this.options.frustumSize * this.aspectRatio / - 2,
-            this.options.frustumSize * this.aspectRatio / 2,
-            this.options.frustumSize / 2,
-            this.options.frustumSize / - 2,
+        this.orthoCamera = new THREE.OrthographicCamera(far * this.aspectRatio / - 2,
+            far * this.aspectRatio / 2,
+            far / 2,
+            far / - 2,
             -1000,
             1000);
 
@@ -308,31 +319,24 @@ export class ViewArea extends Component {
         this.orthoMatrix = new THREE.Matrix4();
         this.orthoMatrix.multiplyMatrices(this.orthoCamera.projectionMatrix, this.orthoCamera.matrixWorldInverse);
 
-        this.options.frustumSize = near;
-        this.updateOrthoCameraState()
+
+        this.orthoNearCamera = new THREE.OrthographicCamera(near * this.aspectRatio / - 2,
+            near * this.aspectRatio / 2,
+            near / 2,
+            near / - 2,
+            -1000,
+            1000);
+
+        this.orthoNearCamera.quaternion.set(this.options.qx, this.options.qy, this.options.qz, this.options.qw);
+        this.orthoNearCamera.quaternion.normalize();
+        this.orthoNearCamera.updateProjectionMatrix();
+        this.orthoNearCamera.updateMatrix();
+        this.orthoNearCamera.updateMatrixWorld();
         this.orthoNearMatrix = new THREE.Matrix4();
-
-        this.orthoNearMatrix.multiplyMatrices(this.orthoCamera.projectionMatrix, this.orthoCamera.matrixWorldInverse);
-
+        this.orthoNearMatrix.multiplyMatrices(this.orthoNearCamera.projectionMatrix, this.orthoNearCamera.matrixWorldInverse);
 
     }
 
-    updateOrthoCameraState = () => {
-        this.orthoCamera.near = this.options.orth_near;
-        this.orthoCamera.far = this.options.orth_far;
-        this.orthoCamera.top = this.options.frustumSize / 2;
-        this.orthoCamera.bottom = this.options.frustumSize / - 2;
-        this.orthoCamera.right = this.options.frustumSize * this.aspectRatio / 2;
-        this.orthoCamera.left = this.options.frustumSize * this.aspectRatio / - 2;
-
-        this.orthoCamera.quaternion.set(this.options.qx, this.options.qy, this.options.qz, this.options.qw);
-        this.orthoCamera.quaternion.normalize();
-        this.orthoCamera.updateProjectionMatrix();
-        this.orthoCamera.updateMatrix();
-        this.orthoCamera.updateMatrixWorld();
-
-        this.orthoMatrix.multiplyMatrices(this.orthoCamera.projectionMatrix, this.orthoCamera.matrixWorldInverse);
-    }
 
     updateUniforms = () => {
 
@@ -352,6 +356,7 @@ export class ViewArea extends Component {
             material.uniforms.x_pos.value = this.options.lposx;
             material.uniforms.z_pos.value = this.options.lposz;
             material.uniforms.scale.value = this.options.terraScale;
+            material.uniforms.nearThreshold.value = this.options.nearThreshold;
         }
 
         this.shadowBaseMaterial.uniforms.x_pos.value = this.options.lposx;
@@ -362,6 +367,7 @@ export class ViewArea extends Component {
         this.shadowTerraMaterial.uniforms.scale.value = this.options.terraScale;
         this.terraMaterial.uniforms.scale.value = this.options.terraScale;
         this.terraMaterial.uniforms.shadowIntensity.value = this.options.shadowIntensity;
+        this.terraMaterial.uniforms.nearThreshold.value = this.options.nearThreshold;
         this.terraMaterial.uniforms.threshold.value = this.options.details_threshold;
         this.terraMaterial.uniforms.snow_details_intensive.value = this.options.snow_details_intensive;
         this.terraMaterial.uniforms.stone_details_intensive.value = this.options.stone_details_intensive;
@@ -395,9 +401,9 @@ export class ViewArea extends Component {
         // fields.add(this.options, "stone_details_freq", 1.0, 1000.0, 1.0);
         // fields.add(this.options, "grass_details_freq", 1.0, 1000.0, 1.0);
         fields.add(this.options, "shadowIntensity", 0.0, 3.0, 0.01);
+        fields.add(this.options, "nearThreshold", 0.0, 400.0, 0.5);
 
-        fields.add(this.options, "camera", 0, 1, 1);
-
+        fields.add(this.options, "camera", 0, 2, 1);
         fields.open();
     }
 

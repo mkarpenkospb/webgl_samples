@@ -8,6 +8,7 @@ out vec3 pos_world;
 out vec3 out_normal;
 out vec2 vUV;
 out vec3 shadowTexPos;
+out vec3 shadowNearTexPos;
 
 uniform float scale;
 uniform sampler2D height_map;
@@ -18,12 +19,9 @@ uniform vec3 min_point;
 uniform float x_pos;
 uniform float z_pos;
 
-
-
+varying float distToCamera;
 void main() {
     #include <begin_vertex>
-
-
 
 
     out_normal = normalize(normalMatrix * normal);
@@ -41,10 +39,13 @@ void main() {
     #include <project_vertex>
     mvPosition = viewMatrix  * vec4(new_pos, 1.0);
     gl_Position = projectionMatrix * mvPosition;
-
+    distToCamera = gl_Position.w;
 
     vec4 tmp = shadowProjView * vec4(new_pos, 1);
     shadowTexPos = ((tmp.xyz / tmp.w) * vec3(0.5)) + vec3(0.5);
+
+    tmp = shadowNearProjView * modelMatrix * vec4(new_pos, 1.0);
+    shadowNearTexPos = (tmp.xyz / tmp.w) * 0.5 + 0.5;
 
     #include <clipping_planes_vertex>
 }

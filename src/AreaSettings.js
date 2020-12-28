@@ -204,6 +204,8 @@ export function setUpTerra(area) {
                 shadowsNearTexture: {value: middle_tex},
                 shadowNearProjView: {value: new THREE.Matrix4()},
 
+                nearThreshold: {value: 10.0},
+
                 shadowIntensity: {value: 0.1},
 
                 details_tex: {value: details_tex},
@@ -299,6 +301,11 @@ export function setUpLighthouse(area) {
 
                     shadowsNearTexture: {value: heightMap},
                     shadowNearProjView: {value: new THREE.Matrix4()},
+
+
+                    nearThreshold: {value: 10.0},
+
+
 
                     scale: {value: 200.0},
                     u_color: {value: color}
