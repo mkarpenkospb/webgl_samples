@@ -16,6 +16,7 @@ let refractivePlane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 100);
 let allView = new THREE.Plane(new THREE.Vector3(0, 1, 0), 1000);
 const far = 1500;
 const near = 386;
+let axisRotation = new THREE.Vector3(0, 1, 0);
 
 
 export class ViewArea extends Component {
@@ -23,6 +24,7 @@ export class ViewArea extends Component {
         super();
         this.canvasRef = React.createRef();
         this.divRef = React.createRef();
+        this.rad = 0;
 
         this.scene = new THREE.Scene();
         this.shadowScene = new THREE.Scene();
@@ -45,7 +47,7 @@ export class ViewArea extends Component {
 
         this.options = {
             color: "#bd9c36",
-            rotationSpeed: 60,
+            rotationSpeed: 16,
             terraScale: 277,
             lighthouseScale: 63,
             camera: 0,
@@ -53,14 +55,18 @@ export class ViewArea extends Component {
             lposx: -80,
             lposz: -147,
 
+
+
             bposx: 250,
             bposz: 250,
+            radius: 100,
+            epsilon: 0.0002,
+
 
 
             lookx: 0,
             looky: 0,
             lookz: 0,
-
 
 
 
@@ -147,7 +153,9 @@ export class ViewArea extends Component {
 
             // ----------------------- draw reflection, clip everything under the water -----------------------
 
-             this.water.visible = false;
+            this.rotateBoat();
+
+            this.water.visible = false;
 
             for (let material of this.lighthouseMaterialMap.values()) {
                 material.clippingPlanes = [reflectivePlane];
@@ -222,6 +230,18 @@ export class ViewArea extends Component {
         }
 
         requestAnimationFrame(renderLoopTick);
+    }
+
+    rotateBoat = () => {
+        this.rad = this.rad + (this.curTime.getTime() - this.prevTime.getTime()) / 1000 * this.options.rotationSpeed * Math.PI / 180;
+        this.boatObject.quaternion.setFromAxisAngle( axisRotation,  -this.rad);
+        this.boatShadowObject.quaternion.setFromAxisAngle( axisRotation,  -this.rad);
+
+        this.boatMaterial.uniforms.x_pos.value = this.options.bposx + this.options.radius * Math.cos(this.rad);
+        this.boatMaterial.uniforms.z_pos.value = this.options.bposz + this.options.radius * Math.sin(this.rad);
+
+        this.boatShadowMaterial.uniforms.x_pos.value = this.options.bposx + this.options.radius * Math.cos(this.rad);
+        this.boatShadowMaterial.uniforms.z_pos.value = this.options.bposz + this.options.radius * Math.sin(this.rad);
     }
 
     handleResize = (canvas, renderer) => {
@@ -369,6 +389,7 @@ export class ViewArea extends Component {
         this.boatMaterial.uniforms.x_pos.value = this.options.bposx;
         this.boatMaterial.uniforms.z_pos.value = this.options.bposz;
         this.boatMaterial.uniforms.nearThreshold.value = this.options.nearThreshold;
+        this.boatMaterial.uniforms.epsilon.value = this.options.epsilon;
 
         this.boatShadowMaterial.uniforms.x_pos.value = this.options.bposx;
         this.boatShadowMaterial.uniforms.z_pos.value = this.options.bposz;
@@ -416,8 +437,13 @@ export class ViewArea extends Component {
         fields.add(this.options, "lposx", -1000, 1000, 0.5);
         fields.add(this.options, "lposz", -1000, 1000, 0.5);
 
-        fields.add(this.options, "bposx", -1000, 1000, 0.5);
-        fields.add(this.options, "bposz", -1000, 1000, 0.5);
+
+        fields.add(this.options, "radius", 50, 500, 1);
+
+        fields.add(this.options, "bposx", -100, 500, 0.5);
+        fields.add(this.options, "bposz", -100, 500, 0.5);
+        fields.add(this.options, "epsilon", 0, 0.5, 0.0001);
+        fields.add(this.options, "rotationSpeed", 0, 100, 1);
 
         fields.add(this.options, "water_ripple", 1.0, 500.0, 1);
         // fields.add(this.options, "details_threshold", 0.0, 100.0, 1.0);

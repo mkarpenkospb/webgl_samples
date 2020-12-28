@@ -423,7 +423,7 @@ export function setUpBoat(area) {
                     shadowsNearTexture: {value: wood2_tex},
                     shadowNearProjView: {value: new THREE.Matrix4()},
 
-
+                    epsilon: {value : 0.0001},
                     nearThreshold: {value: 10.0},
 
                 },
